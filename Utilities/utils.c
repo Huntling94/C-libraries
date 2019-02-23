@@ -118,6 +118,7 @@ int char_cmp(const void* a, const void*b)
         return(*((char*)a)  > *((char*)b)) ? ASCENDING;
     }
 }
+//-----------------------------------------------------------------------------
 
 
 int qsort_int_cmp(const void* a, const void* b)
@@ -195,6 +196,15 @@ int* copy_integer_array(int* A, int n){
     return ret;
 }
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: scalar_copy
+ *
+ * Arguments: a void pointer whose underlying datatype is a scalar
+ *            type of scalar
+ *
+ * Returns: pointer to a copy of the original scalar
+ */
 void* scalar_copy(void* scalar, int type)
 {
     void* ret;
@@ -211,7 +221,17 @@ void* scalar_copy(void* scalar, int type)
     memcpy(ret, scalar, size);
     return ret;
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: string_concatenate
+ *
+ * Arguments: a pointer to a C-string
+ *            another pointer to another C-string
+ *
+ * Returns: a pointer to a 3rd string with s1 and s2 concatenated
+ */
 char* string_concatenate(char* s1, char* s2){
     size_t s1_size = strlen(s1);
     size_t s2_size = strlen(s2);
@@ -221,7 +241,18 @@ char* string_concatenate(char* s1, char* s2){
     memcpy(ret+s1_size, s2, s2_size + 1);
     return ret;
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: lsearch
+ *
+ * Arguments: a pointer to a pointer of C-strings
+ *            number of C-strings
+ *            C-string searched for in A
+ *
+ * Returns: index of desired C-string if found, otherwise -1
+ */
 int lsearch(char** A, int n, char* key)
 {
     int i;
@@ -232,7 +263,19 @@ int lsearch(char** A, int n, char* key)
     }
     return -1;
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: unwanted_null
+ *
+ * Arguments: void pointer
+ *
+ * Returns: 0 if pointer points to NULL, otherwise 1
+ * 
+ * Use this function if you want to test what malloc returned, or the creation
+ * of a file pointer, etc as it prints out an error message on NULL return
+ */
 int unwanted_null(void* test)
 {
     if (test == NULL){
@@ -241,6 +284,7 @@ int unwanted_null(void* test)
     }
     return 1;
 }
+//-----------------------------------------------------------------------------
 
 int is_numeric(int type)
 {
@@ -291,6 +335,16 @@ int subtraction(void* a, void* b, int typea, int typeb)
 {
     return operation(a, b, typea, typeb, SUBTRACTION);
 }
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: free_string_array
+ *
+ * Arguments: a pointer to a pointer of C-strings
+ *            number of C-strings
+ *
+ * Returns: 0
+ */
 int free_string_array(char** A, int n)
 {
     assert(A != NULL);
@@ -299,8 +353,9 @@ int free_string_array(char** A, int n)
         free(A[i]);
     }
     free(A);
-    return 1;
+    return 0;
 }
+//-----------------------------------------------------------------------------
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
@@ -321,5 +376,4 @@ void scalar_swap(void* a, void* b, size_t bytes){
     memcpy(a, b, bytes);
     memcpy(b, temp, bytes);
     free(temp);
-
 }
