@@ -557,6 +557,18 @@ static double vector_geometric_mean(vector_t* v)
     return(nth_root(product, v->dimension));
 }
 //-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: vector_equality
+ *
+ * Arguments: a vector
+ *            another vector
+ *
+ * Returns: 0 if vectors are not equal, otherwise 1
+ *
+ * Dependency: vectors_same_dimension
+ */
 int vector_equality(vector_t* v1, vector_t* v2){
     assert(vectors_same_dimension(v1, v2));
     int i;
@@ -568,7 +580,20 @@ int vector_equality(vector_t* v1, vector_t* v2){
     return 1;
 
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: vector_impute_missing_value
+ *
+ * Arguments: vector
+ *            value that denotes missing value
+ *            method of imputation
+ *
+ * Returns: None. By side effect, imputes missing values of vector
+ *
+ * Dependency: None
+ */
 static void vector_impute_missing_value(vector_t* v, double miss_val, int mode)
 {
     assert(v != NULL);
@@ -601,7 +626,19 @@ static void vector_impute_missing_value(vector_t* v, double miss_val, int mode)
 
     }
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: vector_standard_deviation
+ *
+ * Arguments: vector
+ *            mode: SAMPLE or POPULATION
+ *
+ * Returns: standard deviation of vector
+ *
+ * Dependency: vector_arithmetic_mean
+ */
 static double vector_standard_deviation(vector_t* v1, int mode)
 {
     if (mode == SAMPLE && v1->dimension == 1){
@@ -620,7 +657,21 @@ static double vector_standard_deviation(vector_t* v1, int mode)
         default: printf("Mode not recognised\n"); assert(0);
     }
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: vector_covariance
+ *
+ * Arguments: a vector
+ *            another vector
+ *            mode of calculation: SAMPLE or POPULATION
+ *
+ * Returns: covariance of vector
+ *
+ * Dependency: vectors_same_dimension
+ *             vector_arithmetic_mean
+ */
 double vector_covariance(vector_t* v1, vector_t* v2, int mode)
 {
     assert(vectors_same_dimension(v1, v2));
@@ -643,6 +694,24 @@ double vector_covariance(vector_t* v1, vector_t* v2, int mode)
     }
 
 }
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: vector_covariance
+ *
+ * Arguments: a vector
+ *            another vector
+ *            mode of calculation: SAMPLE or POPULATION
+ *
+ * Returns: correlation between the two vectors
+ *
+ * Dependency: vector_equality
+ *             vector_arithmetic_mean
+ *             vector_scalar_multiplication
+ *             vector_covariance
+ *             vector_standard_deviation
+ */
 double vector_correlation(vector_t* v1, vector_t* v2, int mode)
 {
     if (vector_equality(v1, v2)){
@@ -659,10 +728,9 @@ double vector_correlation(vector_t* v1, vector_t* v2, int mode)
     double cov = vector_covariance(v1, v2, mode);
     double std1 = v1->standard_deviation(v1, mode);
     double std2 = v2->standard_deviation(v2, mode);
-    printf("Cov: %lf, std1: %lf, std2: %lf\n", cov, std1, std2);
     if (std1 == 0.0 || std2 == 0.0){
         return 0.0;
     }
-    printf("To return: %lf/(%lf * %lf) = %lf\n", cov, std1, std2, cov/(std1*std2));
     return cov/(std1 * std2);
 }
+//-----------------------------------------------------------------------------

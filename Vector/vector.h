@@ -11,7 +11,6 @@
 #define MEAN 0
 #define MEDIAN 1
 
-
 #define SAMPLE 0
 #define POPULATION 1
 

@@ -102,8 +102,7 @@ int main(void)
     (vector_equality(v4, v4) == 1) ? printf("vector_equality Success\n"):
                                      printf("vector_equality Failure\n");
 
-    printf("Standard Deviation: %.20lf\n", v4->standard_deviation(v4, POPULATION));
-    printf("Correlation: %.52lf\n", vector_correlation(v4, vector_scalar_multiplication(v4, -1), POPULATION));
+
     if (errno == 0){
         printf("All tests successful\n");
     }
