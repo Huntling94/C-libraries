@@ -101,6 +101,6 @@ double accuracy(int num_correct, int num_matches){
     if (num_matches == 0){
         return 0.0;
     }
-    return num_correct/todo
+    return num_correct/num_matches;
 
 }
