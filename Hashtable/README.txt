@@ -1,0 +1,1 @@
+gcc -Wall -o hashtable_test hashtable_test.c dictionary.c ..\Utilities\utils.c

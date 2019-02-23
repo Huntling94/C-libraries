@@ -1,0 +1,56 @@
+Reboldeaux-Reboldeaux Stone Pit-Rion Prairie
+Reboldeaux Stone Pit-Reboldeaux-Ferrucio Junction
+Ferrucio Junction-Reboldeaux Stone Pit-Al Quelt Moreza (Dungeon)-Lago Celeste
+Al Quelt Moreza (Dungeon)-Ferrucio Junction-Cathari Falls
+Lago Celeste-Ferrucio Junction-Abertal-Rio Abli
+Rio Abli-Cathari Falls-Lago Celeste
+Cathari Falls-Al Quelt Moreza (Dungeon)-Rio Abli-King's Garden
+King's Garden-Cathari Falls-Port Coimbra
+Port Coimbra-Tetra Hill-Jezebel Glen-Ustiur Base Camp-King's Garden-Gigante Island
+Tetra Hill-Port Coimbra-Tetra Ruins (Dungeon)-Topolo Durga
+Tetra Ruins (Dungeon)-Tetra Hill
+Jezebel Glen-Port Coimbra-Porto Bello-The Old Port Coimbra
+The Old Port Coimbra-Jezebel Glen-Porto Bello Desolate Cliff
+Porto Bello-Porto Bello (Dungeon)-Porto Bello Deserted Quay-Jezebel Glen
+Porto Bello (Dungeon)-Porto Bello
+Gigante Island-Port Coimbra-Fire Isle
+Fire Isle-Gigante Island
+Porto Bello Deserted Quay-Porto Bello-Porto Bello Desolate Cliff-Thueringenwald-El Lago de Tres Hermanas
+Porto Bello Desolate Cliff-Deprimida Valley-Porto Bello Deserted Quay-The Old Port Coimbra
+Topolo Durga-Deprimida Valley-Tetra Hill-Tetra Ruins (Dungeon)
+Deprimida Valley-Abertal-El Tejado Verde-Porto Bello Desolate Cliff-Topolo Durga-Via Fluvial
+Abertal-Capybara Plantation (Dungeon)-Deprimida Valley-Lago Celeste-Via Fluvial
+Capybara Plantation (Dungeon)-Abertal
+Via Fluvial-Abertal-Deprimida Valley-El Ruina de Memoria-Vegas Javier
+Vegas Javier-Rion Prairie-Via Fluvial
+El Tejado Verde-Deprimida Valley-El Ruina de Memoria-Thueringenwald-El Lago de Tres Hermanas
+City of Auch-Thueringenwald-El Lago de Tres Hermanas-El Tejado Verde-Porto Bello Deserted Quay
+El Lago de Tres Hermanas-Dr Torsche's Mansion (Dungeon)-Porto Bello Deserted Quay-El Tejado Verde-Thueringenwald
+Dr Torsche's Mansion (Dungeon)-El Lago de Tres Hermanas
+Thueringenwald-City of Auch-El Tejado Verde-Porto Bello Deserted Quay-El Lago de Tres Hermanas
+El Runia de Memoria-El Canon de Diabolica-El Tejado Verde-Via Fluvial-Pradera de Ceniza
+Pradera de Ceniza-El Runia de Memoria-Thueringenwald-Lava Plateau of Joaquin
+Rion Prairie-Bonavista River-Reboldeaux-Vegas Javier
+Bonavista River-Rion Prairie-Joaquin Crater
+Joaquin Crater-Bonavista River-El Canon de Diabolica-Lava Plateau of Joaquin
+El Canon de Diabolica-El Ruina de Memoria-Joaquin Crater
+Prison de Joaquin (Dungeon)-Lava Plateau of Joaquin
+Lava Plateau of Joaquin-Prison de Joaquin (Dungeon)-Scorching Plateau-Pradera de Ceniza-Joaquin Crater
+Scorching Plateau-Ferruccio Wall-Lava Plateau of Joaquin
+Ferrucio Wall-Katovic Snowfield-Scorching Plateau
+Katovic Snowfield-Ferrucio Wall-Frozen Wastes
+Frozen Wastes-Katovic Snowfield-Glacial Plain
+Glacial Plain-Frozen Wastes-Glacial Fortress (Dungeon)
+Ustiur Base Camp-Port Coimbra-Ustiur Zona Uno
+Ustiur Zona Uno-Ustiur Base Camp-Ustiur Zona Dos
+Ustiur Zona Dos-Ustiur Zona Uno-Ustiur Zona Tres
+Ustiur Zona Tres-Ustiur Zoa Dos-Ustiur Zona Cuatro
+Ustiur Zona Cuatro-Ustiur Zona Tres-Bahamar New Opoluto
+Bahamar New Opoluto-Ustiur Zona Cuatro-Bahamar Wetlands
+Bahamar Wetlands-Bahamar New Opoluto-Bahamar Marsh-Bahamar Deep Swamp
+Bahamar Marsh-Bahamar Wetlands-Bahamar Deep Swamp-Bahamar Murky Bayou-Bahamar Caves (Dungeon)
+Bahamar Deep Swamp-Bahamar Wetlands-Bahamar Marsh
+Bahamar Murky Bayou-Bahamar Marsh-Bahamar Deep Swamp-Bahamar Caves (Dungeon)
+Bahamar Caves (Dungeon)-Bahamar Murky Bayou-Bahamar Wetlands-Caebolan
+Caebolan-Bahamar Caves (Dungeon)-Titan's Remorse (Dungeon)
+Titan's Remorse (Dungeon)-Caebolan
