@@ -5,6 +5,15 @@
 #include "files.h"
 #include "..\Utilities\utils.h"
 
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: lines_in_file
+ *
+ * Arguments: file name
+ *
+ * Returns: number of lines in the file
+ */
 int lines_in_file(char* fname)
 {
     FILE *fp = fopen(fname, "r");
@@ -18,7 +27,17 @@ int lines_in_file(char* fname)
     fclose(fp);
     return lines;
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: columns_in_file
+ *
+ * Arguments: file name
+ *            delimiting character
+ *
+ * Returns: number of colums in the file, delimited by delim
+ */
 int columns_in_file(char* fname, char* delim)
 {
     FILE *fp = fopen(fname, "r");
@@ -49,16 +68,27 @@ int columns_in_file(char* fname, char* delim)
     free(str);
     fclose(fp);
     return columns;
-
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: read_file
+ *
+ * Arguments: file name
+ *            buffer file is to be stored into
+ *            number of rows in the file
+ *
+ * Returns: returns number of lines (rows) in the file.
+ *          by side effect, buff now contains file
+ */
 int read_file(char* fname, char** buff, int num_rows)
 {
     FILE *fp = fopen(fname, "r");
     assert(unwanted_null(fp));
 	int c;          // Character read in
 	int lines=0;    // Lines of file
-	int i = 0;      // Characters per line
+	int i=0;      // Characters per line
     unsigned int alloc = 30;
     int alloc_lines = num_rows;
     assert(buff != NULL);
@@ -69,7 +99,8 @@ int read_file(char* fname, char** buff, int num_rows)
         }
         else if (strlen(buff[lines]) >= alloc){
             alloc *= 2;
-            buff[lines] = (char*)realloc(buff[lines], alloc*sizeof(*buff[lines]));
+            buff[lines] = (char*)realloc(buff[lines],
+                           alloc*sizeof(*buff[lines]));
             assert(unwanted_null(buff[lines]));
         }
         buff[lines][i++] = c;
@@ -86,10 +117,20 @@ int read_file(char* fname, char** buff, int num_rows)
 	}
 
 	fclose(fp);
-    //fprintf(stderr, "\tFile read and closed successfully: %d lines read\n", lines);
 	return lines;
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: copy_file
+ *
+ * Arguments: file name of source file
+ *            file name of destination file
+ *
+ * Returns: returns 0 on success, otherwise 1
+ *          by side effect, new copied file with dest name should appear in cd
+ */
 int copy_file(char* src, char* dest)
 {
     int initial_err = errno;
@@ -104,9 +145,10 @@ int copy_file(char* src, char* dest)
         fprintf(fp_dest, "%s\n", buff[i]);
     }
     fclose(fp_dest);
+    free_string_array(buff, lines);
     if (errno == initial_err){
         return 1;
     }
     return 0;
-
 }
+//-----------------------------------------------------------------------------
