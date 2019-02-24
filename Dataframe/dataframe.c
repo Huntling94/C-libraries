@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <string.h>
 #include <math.h>
-#include "..\Elo\elo.c"
+#include "dataframe.h"
 #include "..\Math_Extended\math_extended.h"
 #include "..\Utilities\utils.h"
 #include "..\Files\files.h"
@@ -12,69 +12,17 @@
 #define SUCCESSFULLY_SET_SERIES_ENTRY 101
 #define FAILURE_COL_NUM_EXCEED_SERIES_LEN 199
 
-#define LABELLED 1
-#define NOT_LABELLED 0
-
 #define PRINT_ROW 0
 #define PRINT_COLUMN 1
 
 #define ROW 0
 #define COLUMN 1
 
-#define ELO_POSTPEND " Elo"
-#define WR_POSTPEND " WR"
-
 #define NOT_UNIQUE 0
 #define UNIQUE 1
 
-typedef struct dataframe dataframe_t;
+#define WR_POSTPEND " WR"
 
-typedef struct series series_t;
-
-struct series{
-    void** series;
-    int* datatypes;
-    int num_columns;
-    int alloc_columns;
-
-    int (*set)(series_t* s, int col_num, void* data);
-    void* (*get)(series_t* s, int col_num);
-    void (*del)(series_t* s, int col_num);
-    void (*resize)(series_t* s, int new_size);
-    int (*col_swap)(series_t* s, int c1, int c2);
-    int (*destroy)(series_t* s);
-};
-
-struct dataframe{
-    series_t** df;
-    int* datatypes;
-    int* formatting;
-
-    int num_rows;
-    int num_columns;
-    int alloc_rows;
-    int alloc_columns;
-
-    char** column_names;
-    int column_names_exist;
-
-    int (*size)(dataframe_t* df);
-    void (*columns)(dataframe_t* df);
-    void (*dtypes)(dataframe_t* df);
-    void (*head)(dataframe_t* df, int n);
-    void (*tail)(dataframe_t* df, int n);
-    void (*drop_columns)(dataframe_t* df, char** col_names, int n);
-
-    void (*resize)(dataframe_t* df, int new_size);
-    int (*nunique_col)(dataframe_t* df, char* col_name, int dropna);
-    void (*print_conditional)(dataframe_t* df, char* col_name, void* condition);
-
-    void(*swapaxes)(dataframe_t*, int a1, int a2);
-
-
-};
-
-series_t* create_empty_series(int* datatypes, int n);
 
 static void df_column_rename(dataframe_t* df, char* old_name, char* new_name)
 {
@@ -145,7 +93,6 @@ dataframe_t* csv_to_dataframe(char* fname, char* delim, int* datatypes, int colu
     assert(unwanted_null(ret->column_names));
 
     int i;
-    printf("Number of Columns: %d\n", num_columns);
     for(i=0; i<num_columns; i++){
         ret->datatypes[i] = datatypes[i];
         switch(ret->datatypes[i]){
@@ -171,7 +118,6 @@ dataframe_t* csv_to_dataframe(char* fname, char* delim, int* datatypes, int colu
     }
 
     int initial_i = ret->column_names_exist;
-    printf("Lines: %d, Initial i: %d\n", lines, initial_i);
     for(i=0; i<lines-initial_i; i++){
         ret->df[i] = create_empty_series(datatypes, num_columns);
         char* token = strtok(buff[i+initial_i], delim);
@@ -723,7 +669,7 @@ static void dataframe_append_winrate(dataframe_t* df, char* w, char* l)
     loser->destroy(loser);
 }
 
-
+#if 0
 static void dataframe_append_elo(dataframe_t* df, char* winner, char* loser,
                                  int starting_elo, double K, int mode)
 {
@@ -795,6 +741,7 @@ static void dataframe_append_elo(dataframe_t* df, char* winner, char* loser,
     }
 
 }
+#endif
 
 const void** dataframe_column_iterator(dataframe_t* df, char* col_name, int mode)
 {
@@ -807,123 +754,4 @@ const void** dataframe_column_iterator(dataframe_t* df, char* col_name, int mode
         ret[i] = df->df[i]->series[index];
     }
     return ret;
-}
-
-
-int main(void)
-{
-    int datatypes[] = {INT, INT, INT, STRING, DOUBLE};
-    series_t* s = create_empty_series(datatypes, 5);
-    int i;
-    for(i=0; i<3; i++){
-         s->set(s, i, integer(i*i*i));
-    }
-    s->set(s, 3, "Dog");
-    s->set(s, 4, doub(3.1415));
-    printf("Initialised\n");
-    printf("ok\n");
-    print_series(s, PRINT_COLUMN);
-    print_datatypes(s);
-    printf("\nCOLUMN SWAPPING\n");
-    s->col_swap(s, 3, 4);
-    printf("SWAP SUCCESSFUL\n");
-    print_series(s, PRINT_ROW);
-    s->del(s, 3);
-    print_series(s, PRINT_ROW);
-    print_datatypes(s);
-    s->destroy(s);
-    printf("Completed\n");
-    int types[] = {STRING, STRING, STRING, STRING, STRING, STRING, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT, INT};
-    printf("Attempting\n");
-    dataframe_t* df = csv_to_dataframe("ATP_Matches_modified.csv", ",", types, LABELLED);
-    printf("Successsss\n");
-
-    
-
-    char* names[] = {"Date", "Surf"};
-    dataframe_delete_columns(df, names, 2);
-    df->head(df, 5);
-    df->tail(df, 5);
-    //df->print_conditional(df, "Round", "Finals");
-    printf("Size: %d\n", df->size(df));
-    printf("Mean of Winner: %lf\n", dataframe_mean(df, COLUMN, "Winner"));
-    printf("Mean of Loser: %lf\n", dataframe_mean(df, COLUMN, "Loser"));
-    printf("Number of Unique entries in Column: %d\n", dataframe_nunique_col(df, "L Rank", 0));
-    printf("Mode of Column: %s\n", ((char*)dataframe_mode_col(df, "Round", 0)));
-    df->head(df, 5);
-    //dataframe_frequency_table_col(df, "Tournament");
-    dataframe_applymerge(df, "W As", "L As", SUBTRACTION);
-    dataframe_applymerge(df, "W DF", "L DF", SUBTRACTION);
-    dataframe_applymerge(df, "W FS Won", "L FS Won", SUBTRACTION);
-    dataframe_applymerge(df, "W FS In", "L FS In", SUBTRACTION);
-    dataframe_applymerge(df, "W BP Won", "L BP Won", SUBTRACTION);
-    dataframe_applymerge(df, "W BPs", "L BPs", SUBTRACTION);
-    dataframe_applymerge(df, "W R Won", "L R Won", SUBTRACTION);
-    dataframe_applymerge(df, "W R Faced", "L R Faced", SUBTRACTION);
-    dataframe_applymerge(df, "W Pts", "L Pts", SUBTRACTION);
-    df->head(df, 5);
-    char* namess[] = {"W As", "W DF",     "W FS Won",    "W FS In",    "W BP Won",     "W BPs",    "W R Won",           "W R Faced",          "W Pts"};
-    char* too[] = {"As Diff", "DFs Diff", "FS Won Diff", "FS In Diff", "BPs Won Diff", "BPs Diff", "Returns Won Diff",  "Returns Faced Diff", "Pts Won Diff"};
-    for(i=0; i<9; i++){
-        df_column_rename(df, namess[i], too[i]);
-    }
-    df->head(df, 10);
-    for(i=0; i<9; i++){
-        printf("Mean of %s: %lf\n", too[i], dataframe_mean(df, COLUMN, too[i]));
-        printf("Mode of %s: %d\n", too[i], *((int*)dataframe_mode_col(df, too[i], 0)));
-    }
-    dataframe_resize(df, 60);
-    printf("Alloc Columns: %d\n", df->alloc_columns);
-    df->head(df, 2);
-    dataframe_append_elo(df, "Winner", "Loser", 1600, 31.2, 0);
-    df->print_conditional(df, "Tournament", "Aus Open");
-
-    void** losers = dataframe_column_iterator(df, "Loser", UNIQUE);
-    
-    int matches = 0;
-    int correct = 0;
-    char* rounds[] = {"Qual", "First", "Second", "Third", "Fourth", "QF", "SF", "Finals"};
-    double log_loss_sum = 0.0;
-    
-    int j;
-    for(j=0; j<df->num_rows; j++){
-        
-        for(i=5000; i<df->num_rows; i++){
-            if(!strcmp(df->df[i]->series[0], losers[j])){
-                if (*((int*)df->df[i]->series[19]) > *((int*)df->df[i]->series[20])){
-                    correct++;
-                    log_loss_sum += log_loss(1, elo_probability(*((int*)df->df[i]->series[19]), *((int*)df->df[i]->series[20])));
-                }
-                else{
-                    log_loss_sum += log_loss(0, elo_probability(*((int*)df->df[i]->series[19]), *((int*)df->df[i]->series[20])));
-                }
-                matches++;
-            }
-        }
-        //printf("Accuracy for: %40s: (%4d / %4d): %.5lf, Log Loss Sum: %lf\n", ((char*)losers[j]), correct, matches, correct/(matches+0.0), log_loss_sum/matches);
-        matches = 0;
-        correct = 0;
-        log_loss_sum = 0.0;
-    }
-    free(losers);
-    df->tail(df, 50);
-    dataframe_append_winrate(df, "Winner", "Loser");
-    
-    char* to_del[] = {"W Sets", "W Games", "L Sets", "L Games"};
-    df->drop_columns(df, to_del, 4);
-    df->tail(df, 5);
-    df->columns(df);
-    for(i=5000; i<df->num_rows; i++){
-        if (!strcmp(df->df[i]->series[3], "Qual")){
-            if (*((double*)df->df[i]->series[17]) > *((double*)df->df[i]->series[18])){
-                correct++;
-            }
-            matches++;
-        }
-    }
-    printf("Accuracy for WR (%d / %d): %lf%%\n", correct, matches, (((double)correct / (matches)) * 100));
-    matches = 0;
-    correct = 0;
-    df->tail(df, 15);
-
 }
