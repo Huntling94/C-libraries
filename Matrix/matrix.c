@@ -882,7 +882,6 @@ matrix_t* csv_to_matrix(char* fname, char* delim, int num_rows, char* miss_val,
     char** buff = malloc((num_rows-i)*sizeof(*buff));
     assert(unwanted_null(buff));
     int lines = read_file(fname, buff, num_rows);
-    printf("Attempting to create matrix of size: %d x %d\n", lines-i, columns_in_file(fname, delim));
     matrix_t* m = create_matrix(lines-i, columns_in_file(fname, delim));
     int num_columns = 0;
 
@@ -962,7 +961,6 @@ matrix_t* matrix_to_corrcoef(matrix_t* m, int mode)
             double entry = vector_correlation(m->matrix[i], m->matrix[j], mode);
             ret->set_entry(ret, i, j, entry);
             ret->set_entry(ret, j, i, entry);
-            printf("Covariance: %d %d, %lf\n", i, j, vector_covariance(m->matrix[i], m->matrix[j], mode));
         }
     }
     for(i=0; i<m->num_rows; i++){

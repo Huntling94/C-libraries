@@ -42,7 +42,29 @@ int main(void){
     double* gs = doub(m->grand_sum(m));
     (!double_cmp(s, gs)) ? SUCCESS_FAIL;
     free(s); free(gs);
-     
+
+    printf("Testing destroy_matrix: ");
+    m->free(m); printf("Success\n");
+    
+    printf("Testing matrix_is_square: ");
+    m = create_matrix(init_col, init_col);
+    for(i=0; i<init_col; i++){
+        m->set_matrix_row(m, A, init_col, i);
+    }
+    (m->is_square) ? SUCCESS_FAIL;
+
+    printf("Testing matrix_rank: ");
+    if (m->rank(m) == 1){
+        matrix_t* temp = csv_to_matrix("rank_test1.csv", ",",
+                         lines_in_file("rank_test1.csv"), NULL, 0, 0);
+        (temp->rank(temp) == 3) ? SUCCESS_FAIL;
+        temp->free(temp);
+    }
+    else{
+        (0) ? SUCCESS_FAIL;
+    }
+
+
     
     /* matrix_t* iris_matrix = csv_to_matrix(IRIS_DATASET, ",", lines_in_file(IRIS_DATASET), NULL, 1, 0); */
 
