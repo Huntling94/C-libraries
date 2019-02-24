@@ -501,7 +501,7 @@ static void destroy_matrix(matrix_t* m)
     }
     free(m->index_int);
     free_string_array(m->index_str, m->num_rows);
-    free_string_array(m->column_names, m->num_rows);
+    free_string_array(m->column_names, m->num_columns);
     free(m->matrix);
     free(m);
     m = NULL;
