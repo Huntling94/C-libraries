@@ -9,10 +9,6 @@
 #include "../Files/files.h"
 #include "../Utilities/utils.h"
 
-
-
-
-
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
  * Function: create_matrix
@@ -48,10 +44,11 @@ static void matrix_to_csv(matrix_t* m, char* fname);
 
 matrix_t* create_matrix(int rows, int columns)
 {
+    assert(rows >= 0 && columns >= 0);
     matrix_t* m = malloc(sizeof(*m));
     m->index_int = malloc(rows*sizeof(*m->index_int));
     m->index_str = malloc(rows*sizeof(*m->index_str));
-    m->column_names = malloc(rows*sizeof(*m->column_names));
+    m->column_names = malloc(columns*sizeof(*m->column_names));
     
     assert(unwanted_null(m));
     assert(unwanted_null(m->index_str));
@@ -62,13 +59,18 @@ matrix_t* create_matrix(int rows, int columns)
     for(i=0; i<rows; i++){
         m->index_int[i] = i;
         m->index_str[i] = malloc(sizeof(*m->index_str[i]));
-        m->column_names[i] = malloc(sizeof(*m->column_names[i]));
         assert(unwanted_null(m->index_str[i]));
-        assert(unwanted_null(m->column_names[i]));
 
         m->index_str[i][0] = '\0';
+        
+    }
+
+    for(i=0; i<columns; i++){
+        m->column_names[i] = malloc(sizeof(*m->column_names[i]));
+        assert(unwanted_null(m->column_names[i]));
         m->column_names[i][0] = '\0';
     }
+
     m->str_index_used = 0;
     m->column_index_used = 0;
     m->num_rows = rows;
@@ -79,7 +81,6 @@ matrix_t* create_matrix(int rows, int columns)
     for(i=0; i<m->alloc_rows; i++){
         m->matrix[i] = create_zero_vector(m->alloc_columns);
     }
-
     matrix_add_function_pointers(m);
     return m;
 }
@@ -137,6 +138,7 @@ matrix_t* clone_matrix(matrix_t* m)
 
 static void matrix_add_function_pointers(matrix_t* m)
 {
+    assert(m != NULL);
     m->print = &print_matrix;
     m->print_head = &matrix_print_head;
     m->trace = &matrix_trace;
@@ -157,6 +159,37 @@ static void matrix_add_function_pointers(matrix_t* m)
     m->matrix_column_mean =  &matrix_column_mean;
     m->to_csv = &matrix_to_csv;
 }
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: matrix_equality
+ *
+ * Arguments: matrix 1
+ *            matrix 2
+ *
+ * Returns: 1 if matrices are equal, and 0 otherwise
+ *
+ * Dependency: matrix_get_entry
+ */
+int matrix_equality(matrix_t* m1, matrix_t* m2)
+{
+    assert(m1 != NULL && m2 != NULL);
+    if (m1->num_rows != m2->num_rows
+        || m1->num_columns != m2->num_columns){
+        return 0;
+    }
+    int i, j;
+    for(i=0; i<m1->num_rows; i++){
+        for (j=0; j<m1->num_columns; j++){
+            /* Test matrix entries for equality */
+            if (m1->get_entry(m1, i, j) != m2->get_entry(m2, i, j)){
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+//-----------------------------------------------------------------------------
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
@@ -228,6 +261,7 @@ static double get_matrix_entry(matrix_t* m, int i, int j)
 {
     assert(m != NULL);
     assert(m->num_rows > i && m->num_columns > j);
+    assert(i >= 0 && j >= 0);
     return (m->matrix[i]->vector[j]);
 }
 //-----------------------------------------------------------------------------
@@ -248,6 +282,7 @@ static void set_matrix_entry(matrix_t* m, int i, int j, double entry)
     assert(m != NULL);
     assert(m->num_rows > i);
     assert(m->num_columns > j);
+    assert(i >= 0 && j >= 0);
     m->matrix[i]->set(m->matrix[i], j, entry);
 }
 //-----------------------------------------------------------------------------
@@ -259,7 +294,7 @@ static void set_matrix_entry(matrix_t* m, int i, int j, double entry)
  * Arguments: matrix
  *            array of doubles that will form a row vector in the matrix
  *            size of array of doubles
- *            row number of matrix to be set
+ *            row number of matrix to be set (starting from 0)
  *
  * Returns: void
  *           sets row number in matrix to be the array of doubles
@@ -268,6 +303,7 @@ static void set_matrix_row(matrix_t* m, double* src, int n, int row_num)
 {
     assert(m != NULL);
     assert(m->num_rows > row_num);
+    assert(row_num >= 0);
     assert(m->num_columns == n);
     vector_t* temp = m->matrix[row_num];
     m->matrix[row_num] = create_vector_from_array(src, n);
@@ -316,6 +352,7 @@ static void matrix_row_swap(matrix_t* m, int row_a, int row_b)
     assert(m != NULL);
     assert(m->num_rows > row_a && "Row out of range");
     assert(m->num_rows > row_b && "Row out of range");
+    assert(row_a >= 0 && row_b >= 0);
     vector_t* temp = m->matrix[row_a];
     m->matrix[row_a] = m->matrix[row_b];
     m->matrix[row_b] = temp;
@@ -460,12 +497,11 @@ static void destroy_matrix(matrix_t* m)
     int i;
     for(i=0; i<m->num_rows; i++){
         m->matrix[i]->free(m->matrix[i]);
-        free(m->index_str[i]);
-        free(m->column_names[i]);
+
     }
     free(m->index_int);
-    free(m->column_names);
-    free(m->index_str);
+    free_string_array(m->index_str, m->num_rows);
+    free_string_array(m->column_names, m->num_rows);
     free(m->matrix);
     free(m);
     m = NULL;
@@ -622,14 +658,11 @@ void matrix_eliminate_column(matrix_t* m, int row_pivot, int col_num,
         /* Eliminate */
         for(j=col_num; j<m->num_columns; j++){
             double v = m->matrix[row_pivot]->vector[j];
-            //printf("Old Entry: %lf ==> %lf - (%lf * %lf) = %lf\n", m->matrix[i]->vector[j], m->matrix[i]->vector[j], lambda, v,  m->matrix[i]->vector[j] - (lambda*v));
             if (j==col_num){
                 m->matrix[i]->vector[j] = 0.0;
             }
             else{
-                //printf("Old: %lf\n", m->matrix[i]->vector[j]);
                 m->matrix[i]->vector[j] -= (lambda*v);
-                //printf("New (%lf * %lf): %lf\n", lambda, v, m->matrix[i]->vector[j]);
             }
 
         }
@@ -748,7 +781,6 @@ static double matrix_column_mean(matrix_t* m, int col_num)
  *             gaussian_elimination
  *             "vector.h"
  */
-
 static void matrix_to_csv(matrix_t* m, char* fname)
 {
     FILE *fp = fopen(fname, "w");
@@ -772,7 +804,18 @@ static void matrix_to_csv(matrix_t* m, char* fname)
     }
     fclose(fp);
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: print_column_names
+ *
+ * Arguments: matrix
+ *
+ * Returns: void
+ *
+ * Dependency: None
+ */
 void print_column_names(matrix_t* m)
 {
     assert(m->column_index_used);
@@ -781,7 +824,22 @@ void print_column_names(matrix_t* m)
         printf("%s\n", m->column_names[i]);
     }
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: get_matrix_entry_by_colname
+ *
+ * Arguments: matrix
+ *            row number wanted
+ *            column name wanted
+ *
+ * Returns: returns the entry associated with the row and column_name if 
+ *          the matrix has column names, and if the column name exists,
+ *          otherwise assertion failure
+ *
+ * Dependency: get_matrix_entry
+ */
 double get_matrix_entry_by_colname(matrix_t* m, int row, char* col_name)
 {
     if (!m->column_index_used){
@@ -797,28 +855,51 @@ double get_matrix_entry_by_colname(matrix_t* m, int row, char* col_name)
     return m->get_entry(m, row, index);
 
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: csv_to_matrix
+ *
+ * Arguments: file name of csv file
+ *            characters delimiting the csv (eg ",")
+ *            number of rows in csv file
+ *            missing value sequence for the csv file, (eg "NA"); NULL if none
+ *            whether columns are labelled (LABELLED, NOT_LABELLED) in first row
+ *            whether rows are labelled (LABELLED, NOT_LABELLED) in first column
+ *
+ * Returns: a matrix with entries and indexes corresponding to csv file
+ *
+ * Dependency: create_matrix
+ *             matrix_set_entry
+ * 
+ */
 matrix_t* csv_to_matrix(char* fname, char* delim, int num_rows, char* miss_val,
                         int columns_labelled, int rows_labelled)
 {
-    int i;
-    (columns_labelled) ? (i=1) : (i=0);
+    int i = columns_labelled;
     int initial_i = i;
     char** buff = malloc((num_rows-i)*sizeof(*buff));
     assert(unwanted_null(buff));
     int lines = read_file(fname, buff, num_rows);
-    matrix_t* m = create_matrix(lines-i,12);
+    printf("Attempting to create matrix of size: %d x %d\n", lines-i, columns_in_file(fname, delim));
+    matrix_t* m = create_matrix(lines-i, columns_in_file(fname, delim));
     int num_columns = 0;
 
-
+    /* For each line in the csv file */
     for(i=0; i<lines; i++){
         int j = i-initial_i;
         int entry = 0;
         char* token;
-        token = strtok(buff[i], ",");
+        token = strtok(buff[i], delim);
+        
+        /* If the columns are labelled and we are processing the first line */
         if (columns_labelled && i==0){
             int k = 0;
-            token = strtok(NULL, delim);
+            if (rows_labelled){
+                token = strtok(NULL, delim);
+            }
+            /* Add column names to matrix */
             while (token != NULL){
                 free(m->column_names[k]);
                 m->column_names[k] = malloc((strlen(token)+1)*sizeof(*m->column_names[k]));
@@ -861,6 +942,8 @@ matrix_t* csv_to_matrix(char* fname, char* delim, int num_rows, char* miss_val,
     }
     return m;
 }
+//-----------------------------------------------------------------------------
+
 
 static void matrix_impute_missing_values(matrix_t* m, int mode){
     int i;

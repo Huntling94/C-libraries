@@ -1,12 +1,11 @@
+#ifndef MATRIX_H
+#define MATRIX_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include "..\Vector\vector.h"
-
-
-#ifndef MATRIX_H
-#define MATRIX_H
 
 #define GAUSS_ELIM_ACCURACY 1e-26
 #define LABELLED 1
@@ -54,6 +53,7 @@ matrix_t* csv_to_matrix(char* fname, char* delim, int num_rows, char* miss_val,
 void print_index(matrix_t* m);
 matrix_t* matrix_to_corrcoef(matrix_t* m, int mode);
 
+int matrix_equality(matrix_t* m1, matrix_t* m2);
 matrix_t* matrix_addition(matrix_t* m1, matrix_t* m2);
 matrix_t* matrix_multiply(matrix_t* m1, matrix_t* m2);
 matrix_t* matrix_hadamard_product(matrix_t* m1, matrix_t* m2);
