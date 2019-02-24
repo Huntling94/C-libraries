@@ -15,48 +15,12 @@
 #define PRINT_ROW 0
 #define PRINT_COLUMN 1
 
-#define ROW 0
-#define COLUMN 1
+
 
 #define NOT_UNIQUE 0
 #define UNIQUE 1
 
 #define WR_POSTPEND " WR"
-
-
-static void df_column_rename(dataframe_t* df, char* old_name, char* new_name)
-{
-    assert(df != NULL);
-    if (df->column_names_exist == NOT_LABELLED){
-        fprintf(stderr, "No column names associated\n");
-        assert(0 && "No Column Names");
-    }
-    int index = lsearch(df->column_names, df->num_columns, old_name);
-    if (index < 0){
-        fprintf(stderr, "No such Column Name: %s\n", old_name);
-        assert(0);
-    }
-    char* old = df->column_names[index];
-    df->column_names[index] = copy_string(new_name);
-    free(old);
-    if (strlen(new_name) > df->formatting[index]){
-        df->formatting[index] = strlen(new_name);
-    }
-}
-
-static void df_colswap(dataframe_t* df, int c1, int c2)
-{
-    if (c1 > df->num_columns || c2 > df->num_columns){
-        assert(0 && "Column Num exceeds the number of columns in dataframe");
-    }
-    int i;
-    for(i=0; i<df->num_rows; i++){
-        df->df[i]->col_swap(df->df[i],c1, c2);
-    }
-    scalar_swap(&df->datatypes[c1], &df->datatypes[c2], sizeof(int*));
-    scalar_swap(&df->formatting[c1], &df->formatting[c2], sizeof(int*));
-    scalar_swap(&df->column_names[c1], &df->column_names[c2], sizeof(char*));
-}
 
 static int dataframe_size(dataframe_t* df);
 static void dataframe_columns(dataframe_t* df);
@@ -65,8 +29,14 @@ static void dataframe_print_head(dataframe_t* df, int n);
 static void dataframe_print_tail(dataframe_t* df, int n);
 static void dataframe_print_condition(dataframe_t* df, char* col_name, void* condition);
 static void dataframe_delete_columns(dataframe_t* df, char** col_names, int n);
-static void dataframe_resize(dataframe_t* df, int new_size);
+static void df_resize(dataframe_t* df, int new_size);
 static int dataframe_nunique_col(dataframe_t* df, char* col_name, int dropna);
+static void df_column_rename(dataframe_t* df, char* old_name, char* new_name);
+static void df_colswap(dataframe_t* df, int c1, int c2);
+
+static void dataframe_applymerge(dataframe_t* df, char* col_name1, char* col_name2, int mode);
+static void dataframe_frequency_table_col(dataframe_t* df, char* col_name);
+static double dataframe_mean(dataframe_t* df, int axis, char* name);
 
 dataframe_t* csv_to_dataframe(char* fname, char* delim, int* datatypes, int columns_named)
 {
@@ -148,12 +118,17 @@ dataframe_t* csv_to_dataframe(char* fname, char* delim, int* datatypes, int colu
     ret->head = &dataframe_print_head;
     ret->tail = &dataframe_print_tail;
     ret->drop_columns = &dataframe_delete_columns;
+    ret->rename_column = &df_column_rename;
 
-    ret->resize = &dataframe_resize;
+    ret->resize = &df_resize;
     ret->nunique_col = &dataframe_nunique_col;
 
     ret->print_conditional = &dataframe_print_condition;
     ret->swapaxes= &df_colswap;
+
+    ret->merge = &dataframe_applymerge;
+    ret->print_col_freq = &dataframe_frequency_table_col;
+    ret->mean = &dataframe_mean;
     
     return ret;
 
@@ -489,7 +464,7 @@ static void dataframe_delete_columns(dataframe_t* df, char** col_names, int n)
     }
 }
 
-
+#if 0
 static void* dataframe_mode_col(dataframe_t* df, char* col_name, int dropna)
 {
     assert(df != NULL);
@@ -504,6 +479,8 @@ static void* dataframe_mode_col(dataframe_t* df, char* col_name, int dropna)
     h->destroy(h);
     return ret;
 }
+#endif
+
 static int dataframe_nunique_col(dataframe_t* df, char* col_name, int dropna)
 {
     assert(df != NULL);
@@ -518,6 +495,8 @@ static int dataframe_nunique_col(dataframe_t* df, char* col_name, int dropna)
     h->destroy(h);
     return to_ret;
 }
+
+
 static double dataframe_mean(dataframe_t* df, int axis, char* name)
 {
     
@@ -586,7 +565,19 @@ static void dataframe_applymerge(dataframe_t* df, char* col_name1, char* col_nam
 
 }
 
-static void dataframe_resize(dataframe_t* df, int new_size)
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_resize
+ *
+ * Arguments: dataframe
+ *            new (increased) number of columns
+ *
+ * Returns: Void
+ *
+ * Dependency: utils.h
+ *             series_resize
+ */
+static void df_resize(dataframe_t* df, int new_size)
 {
     assert(df != NULL);
     /* This function only resizes upwards, not downwards */
@@ -594,9 +585,12 @@ static void dataframe_resize(dataframe_t* df, int new_size)
         return;
     }
     df->alloc_columns = new_size;
-    df->formatting = realloc(df->formatting, df->alloc_columns * sizeof(*df->formatting));
-    df->datatypes = realloc(df->datatypes, df->alloc_columns * sizeof(*df->datatypes));
-    df->column_names = realloc(df->column_names, df->alloc_columns * sizeof(*df->column_names));
+    df->formatting = realloc(df->formatting,
+                              df->alloc_columns * sizeof(*df->formatting));
+    df->datatypes = realloc(df->datatypes,
+                             df->alloc_columns * sizeof(*df->datatypes));
+    df->column_names = realloc(df->column_names,
+                             df->alloc_columns * sizeof(*df->column_names));
     assert(unwanted_null(df->formatting));
     assert(unwanted_null(df->datatypes));
     assert(unwanted_null(df->column_names));
@@ -604,10 +598,75 @@ static void dataframe_resize(dataframe_t* df, int new_size)
     for(i=0; i<df->num_rows; i++){
         df->df[i]->resize(df->df[i], new_size);
     }
-
-
-
 }
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_column_rename
+ *
+ * Arguments: dataframe
+ *            name of column to be renamed
+ *            new name desired
+ *
+ * Returns: Void
+ *
+ * Dependency: None
+ */
+static void df_column_rename(dataframe_t* df, char* old_name, char* new_name)
+{
+    assert(df != NULL);
+    if (df->column_names_exist == NOT_LABELLED){
+        fprintf(stderr, "No column names associated\n");
+        assert(0 && "No Column Names");
+    }
+    int index = lsearch(df->column_names, df->num_columns, old_name);
+    if (index < 0){
+        fprintf(stderr, "No such Column Name: %s\n", old_name);
+        assert(0);
+    }
+    char* old = df->column_names[index];
+    df->column_names[index] = copy_string(new_name);
+    free(old);
+    if (strlen(new_name) > df->formatting[index]){
+        df->formatting[index] = strlen(new_name);
+    }
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_colswap
+ *
+ * Arguments: dataframe
+ *            index of c1
+ *            index of c2
+ *
+ * Returns: Void
+ *
+ * Dependency: utils.h
+ *             series_colswap
+ */
+static void df_colswap(dataframe_t* df, int c1, int c2)
+{
+    if (c1 > df->num_columns || c2 > df->num_columns){
+        assert(0 && "Column Num exceeds the number of columns in dataframe");
+    }
+    else if (c1 <= 0 || c2 <= 0){
+        assert(0 && "Cannot have negative column numbers");
+    }
+
+    int i;
+    for(i=0; i<df->num_rows; i++){
+        df->df[i]->col_swap(df->df[i],c1, c2);
+    }
+    scalar_swap(&df->datatypes[c1], &df->datatypes[c2], sizeof(int*));
+    scalar_swap(&df->formatting[c1], &df->formatting[c2], sizeof(int*));
+    scalar_swap(&df->column_names[c1], &df->column_names[c2], sizeof(char*));
+}
+//-----------------------------------------------------------------------------
+
+#if 0
 static void dataframe_append_winrate(dataframe_t* df, char* w, char* l)
 {
     assert(df != NULL);
@@ -668,6 +727,7 @@ static void dataframe_append_winrate(dataframe_t* df, char* w, char* l)
     winner->destroy(winner);
     loser->destroy(loser);
 }
+#endif
 
 #if 0
 static void dataframe_append_elo(dataframe_t* df, char* winner, char* loser,
