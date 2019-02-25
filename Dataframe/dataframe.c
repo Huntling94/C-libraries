@@ -25,9 +25,9 @@
 static int  df_size(dataframe_t* df);
 static void df_columns(dataframe_t* df);
 static void dataframe_dtypes(dataframe_t* df);
-static void dataframe_print_head(dataframe_t* df, int n);
-static void dataframe_print_tail(dataframe_t* df, int n);
-static void dataframe_print_condition(dataframe_t* df, char* col_name, void* condition);
+static void df_print_head(dataframe_t* df, int n);
+static void df_print_tail(dataframe_t* df, int n);
+static void df_print_condition(dataframe_t* df, char* col_name, void* condition);
 static void df_delete_columns(dataframe_t* df, char** col_names, int n);
 static void df_resize(dataframe_t* df, int new_size);
 static int  df_nunique_col(dataframe_t* df, char* col_name, int dropna);
@@ -115,15 +115,15 @@ dataframe_t* csv_to_dataframe(char* fname, char* delim, int* datatypes, int colu
     ret->size = &df_size;
     ret->columns = &df_columns;
     ret->dtypes = &dataframe_dtypes;
-    ret->head = &dataframe_print_head;
-    ret->tail = &dataframe_print_tail;
+    ret->head = &df_print_head;
+    ret->tail = &df_print_tail;
     ret->drop_columns = &df_delete_columns;
     ret->rename_column = &df_column_rename;
 
     ret->resize = &df_resize;
     ret->nunique_col = &df_nunique_col;
 
-    ret->print_conditional = &dataframe_print_condition;
+    ret->print_conditional = &df_print_condition;
     ret->swapaxes= &df_colswap;
 
     ret->merge = &df_applymerge;
@@ -324,10 +324,34 @@ static int column_name_index(dataframe_t* df, char* col_name)
     return index;
     
 }
-static void dataframe_print_condition(dataframe_t* df, char* col_name, void* condition)
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_print_condition
+ *
+ * Arguments: dataframe
+ *            name of column conditional tested on
+ *            condition each column entry is tested for equality against
+ *             example: df_print_condition(df, "Animals", "Dog");
+ *
+ * Returns: Void (prints the rows where the column entry equals the condition)
+ * 
+ * Dependency: utility.h
+ *             column_name_index
+ *             df_print_help
+ */
+static void df_print_condition(dataframe_t* df, char* col_name, void* condition)
 {
+    assert(df != NULL);
+    assert(col_name != NULL);
+    assert(condition != NULL);
     int i;
-    if (df->column_names_exist == LABELLED){
+
+    if (df->column_names_exist == NOT_LABELLED){
+        fprintf(stderr, "No column names associated\n");
+        assert(0 && "No Column Names");
+    }
+    else if (df->column_names_exist == LABELLED){
         for(i=0; i<df->num_columns; i++){
             printf("%*s ", df->formatting[i], df->column_names[i]);
         }
@@ -349,9 +373,25 @@ static void dataframe_print_condition(dataframe_t* df, char* col_name, void* con
     }
     free(condition);
 }
-static void dataframe_print_head(dataframe_t* df, int n)
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_print_head
+ *
+ * Arguments: dataframe
+ *            number of rows from the head to print
+ *
+ * Returns: Void (prints first n rows of dataframe)
+ * 
+ * Dependency: df_print_help
+ */
+static void df_print_head(dataframe_t* df, int n)
 {
     assert(df != NULL);
+    assert(n > 0 && "Must enter a positive number of rows\n");
+    assert(n <= df->num_rows && "Can't print more rows than df contains\n");
+
     printf("Shape: %d x %d\n", df->num_rows, df->num_columns);
     int i;
     if (df->column_names_exist == LABELLED){
@@ -365,10 +405,25 @@ static void dataframe_print_head(dataframe_t* df, int n)
     }
     printf("\n");
 }
+//-----------------------------------------------------------------------------
 
-static void dataframe_print_tail(dataframe_t* df, int n)
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_print_tail
+ *
+ * Arguments: dataframe
+ *            number of rows from the tail to print
+ *
+ * Returns: Void (prints last n rows of dataframe)
+ * 
+ * Dependency: df_print_help
+ */
+static void df_print_tail(dataframe_t* df, int n)
 {
     assert(df != NULL);
+    assert(n > 0 && "Must enter a positive number of rows\n");
+    assert(n <= df->num_rows && "Can't print more rows than df contains\n");
+
     printf("Shape: %d x %d\n", df->num_rows, df->num_columns);
     int i;
     if (df->column_names_exist == LABELLED){
@@ -381,7 +436,9 @@ static void dataframe_print_tail(dataframe_t* df, int n)
         df_print_help(df, i);
     }
     printf("\n");
+    return;
 }
+//-----------------------------------------------------------------------------
 
 #if 0
 static void dataframe_print(dataframe_t* df)
