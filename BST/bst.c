@@ -4,6 +4,7 @@
 #include <string.h>
 #include <math.h>
 #include "bst.h"
+#include "..\Utilities\utils.h"
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
@@ -29,7 +30,7 @@ static void pre_order_traversal(tree_t* tree, void action(void* data));
 static void visit(tree_t* tree, void* key, int cmp(void*, void*));
 static void unvisit_all(tree_t* tree);
 
-void create_tree(tree_t* tree, int cmp_func(void*, void*))
+void create_tree(tree_t* tree, int cmp_func(const void*, const void*))
 {
     tree->root = NULL;
     tree->cmp = cmp_func;
@@ -65,10 +66,10 @@ static node_t* create_node(void* data)
     assert(data != NULL);
 
     node_t* to_return = malloc(sizeof(*to_return));
-    assert(to_return != NULL);
+    assert(unwanted_null(to_return));
 
     to_return->data = malloc(sizeof(*to_return->data));
-    assert(to_return->data != NULL);
+    assert(unwanted_null(to_return->data));
 
     to_return->visited = 0;
     to_return->frequency = 1;
@@ -87,13 +88,13 @@ static node_t* create_node(void* data)
  * Arguments: the tree
  *            data that has been dynamically allocated preferably
  *
- * Dependency: relies on create_node
+ * Dependency: create_node
  *
  * Returns: a pointer to the node (can be inserted by calling insert_tree)
  *
  */
 static node_t* insert_tree(node_t* parent, node_t* new_node,
-                           int cmp(void*, void*));
+                           int cmp(const void*, const void*));
 
 static void insert(tree_t* t, void* data){
     t->root = insert_tree(t->root, create_node(data), t->cmp);
@@ -101,7 +102,7 @@ static void insert(tree_t* t, void* data){
 
 /* Inserts a unique node into tree */
 static node_t* insert_tree(node_t* parent, node_t* new_node,
-                           int cmp(void*, void*))
+                           int cmp(const void*, const void*))
 {
     /* First insertion into parent at this level of tree */
     if (parent == NULL){
@@ -115,7 +116,6 @@ static node_t* insert_tree(node_t* parent, node_t* new_node,
         parent->frequency++;
         return parent;
     }
-    /* Note: ternary macros depend on the greater then equality sign */
     else if (result>0){
         parent->left = insert_tree(parent->left, new_node, cmp);
     }
@@ -175,7 +175,7 @@ node_t* find_key(node_t* node, void* key, int cmp(void* data, void* key))
  *            the key in the data of the tree searched for
  *            a comparison function between the key and the data
  *
- * Dependency: relies on find
+ * Dependency: find
  *
  * Returns: 1 of data associated with key in tree, 0 otherwise
  *

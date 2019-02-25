@@ -10,7 +10,7 @@
 typedef struct tree tree_t;
 typedef struct node node_t;
 
-void create_tree(tree_t* tree, int cmp_func(void*, void*));
+void create_tree(tree_t* tree, int cmp_func(const void*, const void*));
 
 
 
@@ -25,7 +25,7 @@ struct node{
 struct tree{
     node_t* root;
 
-    int (*cmp)(void*, void*);
+    int (*cmp)(const void*, const void*);
     void (*insert)(tree_t* tree, void* data);
     node_t* (*find)(tree_t* t, void* key, int cmp(void*, void*));
     void (*print)(tree_t* t, void print(void* data));
