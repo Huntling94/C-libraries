@@ -1,5 +1,5 @@
-#ifndef DICTIONARY_H
-#define DICTIONARY_H
+#ifndef HASHTABLE_H
+#define HASHTABLE_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,4 +59,4 @@ hashtable_t* create_simple_hashtable(unsigned int table_size, int type);
 void destroy_dict_array(dict_array_t* a);
 int hashtable_union_len(hashtable_t* h1, hashtable_t* h2, int type);
 
-#endif // DICTIONARY_H
+#endif // HASHTABLE_H
