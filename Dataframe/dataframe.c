@@ -22,21 +22,21 @@
 
 #define WR_POSTPEND " WR"
 
-static int dataframe_size(dataframe_t* df);
-static void dataframe_columns(dataframe_t* df);
+static int  df_size(dataframe_t* df);
+static void df_columns(dataframe_t* df);
 static void dataframe_dtypes(dataframe_t* df);
 static void dataframe_print_head(dataframe_t* df, int n);
 static void dataframe_print_tail(dataframe_t* df, int n);
 static void dataframe_print_condition(dataframe_t* df, char* col_name, void* condition);
-static void dataframe_delete_columns(dataframe_t* df, char** col_names, int n);
+static void df_delete_columns(dataframe_t* df, char** col_names, int n);
 static void df_resize(dataframe_t* df, int new_size);
-static int dataframe_nunique_col(dataframe_t* df, char* col_name, int dropna);
+static int  df_nunique_col(dataframe_t* df, char* col_name, int dropna);
 static void df_column_rename(dataframe_t* df, char* old_name, char* new_name);
 static void df_colswap(dataframe_t* df, int c1, int c2);
 
-static void dataframe_applymerge(dataframe_t* df, char* col_name1, char* col_name2, int mode);
-static void dataframe_frequency_table_col(dataframe_t* df, char* col_name);
-static double dataframe_mean(dataframe_t* df, int axis, char* name);
+static void df_applymerge(dataframe_t* df, char* col_name1, char* col_name2, int mode);
+static void df_frequency_table_col(dataframe_t* df, char* col_name);
+static double df_mean(dataframe_t* df, int axis, char* name);
 
 dataframe_t* csv_to_dataframe(char* fname, char* delim, int* datatypes, int columns_named)
 {
@@ -112,23 +112,23 @@ dataframe_t* csv_to_dataframe(char* fname, char* delim, int* datatypes, int colu
         }
     }
 
-    ret->size = &dataframe_size;
-    ret->columns = &dataframe_columns;
+    ret->size = &df_size;
+    ret->columns = &df_columns;
     ret->dtypes = &dataframe_dtypes;
     ret->head = &dataframe_print_head;
     ret->tail = &dataframe_print_tail;
-    ret->drop_columns = &dataframe_delete_columns;
+    ret->drop_columns = &df_delete_columns;
     ret->rename_column = &df_column_rename;
 
     ret->resize = &df_resize;
-    ret->nunique_col = &dataframe_nunique_col;
+    ret->nunique_col = &df_nunique_col;
 
     ret->print_conditional = &dataframe_print_condition;
     ret->swapaxes= &df_colswap;
 
-    ret->merge = &dataframe_applymerge;
-    ret->print_col_freq = &dataframe_frequency_table_col;
-    ret->mean = &dataframe_mean;
+    ret->merge = &df_applymerge;
+    ret->print_col_freq = &df_frequency_table_col;
+    ret->mean = &df_mean;
     
     return ret;
 
@@ -410,13 +410,34 @@ void dataframe_print_formatting(dataframe_t* df)
     }
 }
 
-static int dataframe_size(dataframe_t* df)
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_columns
+ *
+ * Arguments: dataframe
+ *
+ * Returns: dataframe rows * columns
+ *
+ * Dependency: None
+ */
+static int df_size(dataframe_t* df)
 {
     assert(df != NULL);
     return df->num_rows * df->num_columns;
 }
+//-----------------------------------------------------------------------------
 
-static void dataframe_columns(dataframe_t* df)
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_columns
+ *
+ * Arguments: dataframe
+ *
+ * Returns: Void (prints all column names of dataframe)
+ *
+ * Dependency: None
+ */
+static void df_columns(dataframe_t* df)
 {
     assert(df != NULL);
     if (df->column_names_exist == NOT_LABELLED){
@@ -428,8 +449,22 @@ static void dataframe_columns(dataframe_t* df)
         printf("%d: %s\n", i, df->column_names[i]);
     }
 }
+//-----------------------------------------------------------------------------
 
-static void dataframe_delete_column(dataframe_t* df, char* col_name)
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_nunique_col
+ *
+ * Arguments: dataframe
+ *            column_name to be deleted
+ *
+ * Returns: Void (deletes column from dataframe)
+ *
+ * Dependency: utils.h
+ *             column_name_index
+ *             series_del
+ */
+static void df_delete_column(dataframe_t* df, char* col_name)
 {
     assert(df != NULL);
     assert(col_name != NULL);
@@ -449,10 +484,25 @@ static void dataframe_delete_column(dataframe_t* df, char* col_name)
     df->num_columns--;
     return;
 }
+//-----------------------------------------------------------------------------
 
-static void dataframe_delete_columns(dataframe_t* df, char** col_names, int n)
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_delete_columns
+ *
+ * Arguments: dataframe
+ *            column names
+ *            number of columns to be deleted
+ *
+ * Returns: Number of unique entries in column
+ *
+ * Dependency: df_delete_column
+ */
+static void df_delete_columns(dataframe_t* df, char** col_names, int n)
 {
     assert(df != NULL);
+    assert(col_names != NULL);
     if (df->column_names_exist == NOT_LABELLED){
         fprintf(stderr, "No column names associated\n");
         assert(0 && "No Column Names");
@@ -460,9 +510,10 @@ static void dataframe_delete_columns(dataframe_t* df, char** col_names, int n)
     
     int i;
     for(i=0; i<n; i++){
-        dataframe_delete_column(df, col_names[i]);
+        df_delete_column(df, col_names[i]);
     }
 }
+//-----------------------------------------------------------------------------
 
 #if 0
 static void* dataframe_mode_col(dataframe_t* df, char* col_name, int dropna)
@@ -481,23 +532,52 @@ static void* dataframe_mode_col(dataframe_t* df, char* col_name, int dropna)
 }
 #endif
 
-static int dataframe_nunique_col(dataframe_t* df, char* col_name, int dropna)
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_nunique_col
+ *
+ * Arguments: dataframe
+ *            column_name
+ *            whether to drop missing values (TODO)
+ *
+ * Returns: Number of unique entries in column
+ *
+ * Dependency: utils.h
+ *             hashtable.h
+ *             column_name_index
+ */
+static int df_nunique_col(dataframe_t* df, char* col_name, int dropna)
 {
     assert(df != NULL);
     assert(col_name != NULL);
     int index = column_name_index(df, col_name);
-    hashtable_t* h = create_simple_hashtable(df->num_rows, df->datatypes[index]);
+    int dtype = df->datatypes[index];
+    hashtable_t* h = create_simple_hashtable(df->num_rows, dtype);
     int i;
     for(i=0; i<df->num_rows; i++){
-        h->insert(h, scalar_copy(df->df[i]->series[index], df->datatypes[index]) , NULL);
+        h->insert(h, scalar_copy(df->df[i]->series[index], dtype) , NULL);
     }
-    int to_ret = h->len(h);
+    int num_unique = h->len(h);
     h->destroy(h);
-    return to_ret;
+    return num_unique;
 }
+//-----------------------------------------------------------------------------
 
-
-static double dataframe_mean(dataframe_t* df, int axis, char* name)
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_mean
+ *
+ * Arguments: dataframe
+ *            axis to calculate mean of (ROW, COLUMN)
+ *            column name or row name as desired
+ *             (if no row names set, then "0" means row 0)
+ *
+ * Returns: Void
+ *
+ * Dependency: utils.h
+ *             column_name_index
+ */
+static double df_mean(dataframe_t* df, int axis, char* name)
 {
     
     double sum = 0.0;
@@ -515,14 +595,28 @@ static double dataframe_mean(dataframe_t* df, int axis, char* name)
         }
     }
     else if (axis == ROW){
+        /* TODO */
         return 100.1;
     }
     else{
-        assert(0);
+        assert(0 && "Axis not recognised, try COLUMN or ROW");
     }
 }
+//-----------------------------------------------------------------------------
 
-static void dataframe_frequency_table_col(dataframe_t* df, char* col_name)
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_frequency_table_col
+ *
+ * Arguments: dataframe
+ *            name of column you want frequencies of
+ *
+ * Returns: Void (prints frequency table of column name)
+ *
+ * Dependency: utils.h
+ *             series_colswap
+ */
+static void df_frequency_table_col(dataframe_t* df, char* col_name)
 {
     assert(df != NULL);
     assert(col_name != NULL);
@@ -535,8 +629,26 @@ static void dataframe_frequency_table_col(dataframe_t* df, char* col_name)
     h->print_frequencies(h, df->formatting[index]);
     h->destroy(h);
 }
+//-----------------------------------------------------------------------------
 
-static void dataframe_applymerge(dataframe_t* df, char* col_name1, char* col_name2, int mode)
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_applymerge
+ *
+ * Arguments: dataframe
+ *            name of first column (merge into this)
+ *            name of second column
+ *            mode of merging two columns (ADDITION, SUBTRACTION)
+ *
+ * Returns: Void (merges second  with first, drops second)
+ *          Only works if both columns have numeric data
+ * 
+ * Dependency: utils.h
+ *             column_name_index
+ *             df_delete_columns
+ *             
+ */
+static void df_applymerge(dataframe_t* df, char* col_name1, char* col_name2, int mode)
 {
     int index1 = column_name_index(df, col_name1);
     int index2 = column_name_index(df, col_name2);
@@ -562,8 +674,8 @@ static void dataframe_applymerge(dataframe_t* df, char* col_name1, char* col_nam
     }
     df->drop_columns(df, &col_name2, 1);
     return;
-
 }
+//-----------------------------------------------------------------------------
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
