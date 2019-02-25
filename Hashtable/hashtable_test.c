@@ -4,32 +4,50 @@
 #include <string.h>
 #include "..\Utilities\utils.h"
 #include "hashtable.h"
+#include <unistd.h>
+
+#define SUCCESS_FAIL (printf("Success\n")) : (printf("Failed\n"))
+#define MAX_SIZE 100
 
 int main(void)
 {
-    hashtable_t* table = create_simple_hashtable(100, INT);
-    printf("Created hashtable with %u buckets\n", table->table_size);
+    unsigned int size = getpid() % MAX_SIZE;
     int i;
-    for(i=0; i<table->table_size; i+=2){
-        table->insert(table, integer(i), NULL);
-        table->insert(table, integer(i), NULL);
-        i++;
-        table->insert(table, integer(i), NULL);
+
+    printf("Testing create_simple_hashtable (with integers): ");
+    hashtable_t* h = create_simple_hashtable(size, INT);
+
+    (h->table_size == size && h->unique_elements == 0
+     && h->type == INT && h->data_size == sizeof(int)) ? SUCCESS_FAIL;
+    h->destroy(h);
+
+    printf("Testing create_simple_hashtable (with C-strings): ");
+
+    char* str_table[] = {"Dog", "Cat", "Bird", "Will", "CPP", "Estoppel"};
+    size = sizeof(str_table) / sizeof(*str_table);
+    h = create_simple_hashtable(size, STRING);
+
+    for(i=0; i<size; i++){
+        h->insert(h, copy_string(str_table[i]), str_table[i]);
     }
 
-    dict_array_t* table_array = table->to_array(table);
+    if (h->table_size == size && h->unique_elements == size
+     && h->type == STRING && h->data_size == sizeof(char*)){
+        int success = 1;
+        for (i=0; i<size; i++){
+            if (h->in(h, str_table[i]) == NULL){
+                success = 0;
+                break;
+            }
+        }
+        (success) ? SUCCESS_FAIL;
+    }
+    else{
+        printf("Failed\n");
+    }
 
-
-    /*qsort(table_array, n, sizeof(*table_array), qsort_cmp(INT));
-    printf("\n\nQuick sorted\n");*/
-    table->print_frequencies(table);
-    
-    printf("%d\n", table_array->num_elements);
-    printf("%d of %d in use\n", table->in_use, table->table_size);
-    table->destroy(table);
-    destroy_dict_array(table_array);
-    printf("Successfully destroyed\n");
-    
-    return 0;
+    printf("Testing hashtable_len: ");
+    (h->len(h) == size) ? SUCCESS_FAIL;
+    h->destroy(h);
 
 }

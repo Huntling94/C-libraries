@@ -293,6 +293,15 @@ void destroy_dict_array(dict_array_t* a)
     free(a);
 }
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: hashtable_print_frequencies
+ *
+ * Arguments: the hashtable
+ *            max spaces to leave for formatting
+ *          
+ * Returns: Void (prints out frequency table of hashtable)
+ */
 void hashtable_print_frequencies(hashtable_t* h, int max)
 {
     int i;
@@ -311,6 +320,7 @@ void hashtable_print_frequencies(hashtable_t* h, int max)
                 assert(0);
         }
     }
+    destroy_dict_array(a);
 }
 
 static void* hashtable_most_frequent(hashtable_t* h)
