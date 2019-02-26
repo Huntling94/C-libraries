@@ -101,23 +101,62 @@ series_t* create_empty_series(int* datatypes, int n)
 /*********************** Operation Functions on Series ***********************/
 /*****************************************************************************/
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: series_get
+ *
+ * Arguments: series
+ *            column number of series to get
+ *
+ * Returns: void pointer to desired data in series
+ * 
+ * Dependency: None
+ */
 static void* series_get(series_t* s, int col_num)
 {
+    assert(s != NULL);
     if (col_num > s->num_columns){
         assert(0 && "Column Num exceeds the number of columns in Series");
     }
     return s->series[col_num];
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: series_set
+ *
+ * Arguments: series
+ *            column number of series to set
+ *            data entry it to be set as
+ *
+ * Returns: Void (frees current entry; entry now points to data)
+ * 
+ * Dependency: None
+ */
 static void series_set(series_t* s, int col_num, void* data)
 {
+    assert(s != NULL);
     if (col_num > s->num_columns){
         assert(0 && "Column Num exceeds the number of columns in Series");
     }
+    free(s->series[col_num]);
     s->series[col_num] = data;
     return;
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: series_resize
+ *
+ * Arguments: datatypes for each entry in the series
+ *            new size of series
+ *
+ * Returns: Void (increases series to desired size)
+ * 
+ * Dependency: utils.h
+ */
 static void series_resize(series_t* s, int new_size)
 {
     assert(s != NULL);
@@ -126,16 +165,32 @@ static void series_resize(series_t* s, int new_size)
         return;
     }
     s->alloc_columns = new_size;
-    s->series = realloc(s->series, s->alloc_columns * sizeof(*s->series));
-    s->datatypes = realloc(s->datatypes, s->alloc_columns * sizeof(*s->datatypes));
+    s->series = realloc(s->series, new_size * sizeof(*s->series));
+    s->datatypes = realloc(s->datatypes, new_size * sizeof(*s->datatypes));
     assert(unwanted_null(s->series));
     assert(unwanted_null(s->datatypes));
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: series_del
+ *
+ * Arguments: series
+ *            column number of series to delete
+ *
+ * Returns: Void (deletes column in series)
+ * 
+ * Dependency: None
+ */
 static void series_del(series_t* s, int col_num)
 {
+    assert(s != NULL);
     if (col_num > s->num_columns){
         assert(0 && "Column Num exceeds the number of columns in Series");
+    }
+    else if (col_num < 0){
+        assert(0 && "Must enter a positive column number");
     }
     
     free(s->series[col_num]);
@@ -148,6 +203,7 @@ static void series_del(series_t* s, int col_num)
     s->num_columns--;
     return;
 }
+//-----------------------------------------------------------------------------
 
 static void series_colswap(series_t* s, int c1, int c2)
 {
