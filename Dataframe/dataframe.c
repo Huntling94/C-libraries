@@ -22,12 +22,20 @@
 
 #define WR_POSTPEND " WR"
 
-static int  df_size(dataframe_t* df);
+/* Constructor functions for dataframe */
+dataframe_t* csv_to_dataframe(char* fname, char* delim,
+                               int* datatypes, int columns_named);
+
+/* Printing functions for dataframe */
 static void df_columns(dataframe_t* df);
-static void dataframe_dtypes(dataframe_t* df);
+static void df_dtypes(dataframe_t* df);
 static void df_print_head(dataframe_t* df, int n);
 static void df_print_tail(dataframe_t* df, int n);
 static void df_print_condition(dataframe_t* df, char* col_name, void* condition);
+static void df_frequency_table_col(dataframe_t* df, char* col_name);
+
+static int  df_size(dataframe_t* df);
+
 static void df_delete_columns(dataframe_t* df, char** col_names, int n);
 static void df_resize(dataframe_t* df, int new_size);
 static int  df_nunique_col(dataframe_t* df, char* col_name, int dropna);
@@ -35,105 +43,10 @@ static void df_column_rename(dataframe_t* df, char* old_name, char* new_name);
 static void df_colswap(dataframe_t* df, int c1, int c2);
 
 static void df_applymerge(dataframe_t* df, char* col_name1, char* col_name2, int mode);
-static void df_frequency_table_col(dataframe_t* df, char* col_name);
+
 static double df_mean(dataframe_t* df, int axis, char* name);
 
-dataframe_t* csv_to_dataframe(char* fname, char* delim, int* datatypes, int columns_named)
-{
-    dataframe_t* ret = malloc(sizeof(*ret));
-    assert(unwanted_null(ret));
-    int lines = lines_in_file(fname);
-    ret->num_rows = lines-columns_named;
-    ret->num_columns = columns_in_file(fname, delim);
-    int num_columns = ret->num_columns;
-    char** buff = malloc(lines * sizeof(*buff));
-    assert(unwanted_null(buff));
-    read_file(fname, buff, lines);
-    ret->df = malloc(lines * sizeof(*ret->df));
-    ret->alloc_rows = lines;
-    ret->datatypes = malloc(num_columns * sizeof(*ret->datatypes));
-    ret->alloc_columns = num_columns;
-    ret->formatting = malloc(num_columns * sizeof(*ret->formatting));
-    ret->column_names = malloc(num_columns * sizeof(*ret->column_names));
-    ret->column_names_exist = columns_named;
 
-    assert(unwanted_null(ret->df));
-    assert(unwanted_null(ret->datatypes));
-    assert(unwanted_null(ret->formatting));
-    assert(unwanted_null(ret->column_names));
-
-    int i;
-    for(i=0; i<num_columns; i++){
-        ret->datatypes[i] = datatypes[i];
-        switch(ret->datatypes[i]){
-            case INT: ret->formatting[i] = 1; break;
-            case STRING: ret->formatting[i] = 1; break;
-            case DOUBLE: ret->formatting[i] = 1; break;
-            default: assert(0);
-        }
-
-    }
-    if (ret->column_names_exist == LABELLED){
-        char* token = strtok(buff[0], delim);
-        int j = 0;
-        while(token != NULL){
-            ret->column_names[j] = copy_string(token);
-            if (strlen(token) > ret->formatting[j]){
-                ret->formatting[j] = strlen(token);
-            }
-            j++;
-            token = strtok(NULL, delim);
-            
-        }
-    }
-
-    int initial_i = ret->column_names_exist;
-    for(i=0; i<lines-initial_i; i++){
-        ret->df[i] = create_empty_series(datatypes, num_columns);
-        char* token = strtok(buff[i+initial_i], delim);
-        int j=0;
-        while(token != NULL){
-            switch(ret->datatypes[j]){
-                case INT: ret->df[i]->set(ret->df[i], j, integer(atoi(token)));
-                    if(ceil(log10(atoi(token))) > ret->formatting[j]){
-                        ret->formatting[j] = ceil(log10(atoi(token)));
-                    }
-                    break;
-                case STRING: ret->df[i]->set(ret->df[i], j, copy_string(token));
-                    if (strlen(token) > ret->formatting[j]){
-                        ret->formatting[j] = strlen(token);
-                    }
-                    break;
-                case DOUBLE: ret->df[i]->set(ret->df[i], j, doub(strtod(token, NULL))); break;
-                default:; printf("Error on Row: %d\n", i); assert(0);
-            }
-            j++;
-            token = strtok(NULL, delim);
-        }
-    }
-
-    ret->size = &df_size;
-    ret->columns = &df_columns;
-    ret->dtypes = &dataframe_dtypes;
-    ret->head = &df_print_head;
-    ret->tail = &df_print_tail;
-    ret->drop_columns = &df_delete_columns;
-    ret->rename_column = &df_column_rename;
-
-    ret->resize = &df_resize;
-    ret->nunique_col = &df_nunique_col;
-
-    ret->print_conditional = &df_print_condition;
-    ret->swapaxes= &df_colswap;
-
-    ret->merge = &df_applymerge;
-    ret->print_col_freq = &df_frequency_table_col;
-    ret->mean = &df_mean;
-    
-    return ret;
-
-    
-}
 
 static int series_set(series_t* s, int col_num, void* data);
 static void* series_get(series_t* s, int col_num);
@@ -277,19 +190,132 @@ static int destroy_series(series_t* s)
     return 110;
 }
 
-static void dataframe_dtypes(dataframe_t* df)
+/*****************************************************************************/
+/******************* Constructor Functions for Dataframe *********************/
+/*****************************************************************************/
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: csv_to_dataframe
+ *
+ * Arguments: file name
+ *            characters delimiting columns in file name
+ *            datatypes for each column of dataframe
+ *            whether first row in file has column names (UNLABELLED, LABELLED)
+ *
+ * Returns: initialised dataframe
+ * 
+ * Dependency: utils.h
+ *             files.h
+ *             create_empty_series
+ */
+dataframe_t* csv_to_dataframe(char* fname, char* delim,
+                              int* datatypes, int columns_named)
 {
-    assert(df != NULL);
+    dataframe_t* ret = malloc(sizeof(*ret));
+    assert(unwanted_null(ret));
+
+    int lines = lines_in_file(fname);
+    ret->num_rows = lines-columns_named;
+    ret->num_columns = columns_in_file(fname, delim);
+    int num_columns = ret->num_columns;
+    char** buff = malloc(lines * sizeof(*buff));
+    assert(unwanted_null(buff));
+    read_file(fname, buff, lines);
+
+    ret->df = malloc(lines * sizeof(*ret->df));
+    ret->alloc_rows = lines;
+    ret->datatypes = malloc(num_columns * sizeof(*ret->datatypes));
+    ret->alloc_columns = num_columns;
+    ret->formatting = malloc(num_columns * sizeof(*ret->formatting));
+    ret->column_names = malloc(num_columns * sizeof(*ret->column_names));
+    ret->column_names_exist = columns_named;
+
+    assert(unwanted_null(ret->df));
+    assert(unwanted_null(ret->datatypes));
+    assert(unwanted_null(ret->formatting));
+    assert(unwanted_null(ret->column_names));
+
     int i;
-    for(i=0; i<df->num_columns; i++){
-        switch(df->datatypes[i]){
-            case INT: printf("Integer\n"); break;
-            case STRING: printf("String\n"); break;
-            case DOUBLE: printf("Double\n"); break;
-            default: assert(0);
+    /* Loads in datatypes of each column in dataframe */
+    for(i=0; i<num_columns; i++){
+        ret->datatypes[i] = datatypes[i];
+        switch(ret->datatypes[i]){
+            case INT: ret->formatting[i] = 1; break;
+            case STRING: ret->formatting[i] = 1; break;
+            case DOUBLE: ret->formatting[i] = 1; break;
+            default: assert(0 && "Datatype not recognised\n");
+        }
+
+    }
+    /* Load in column names to dataframe if labelled in file */
+    if (ret->column_names_exist == LABELLED){
+        char* token = strtok(buff[0], delim);
+        int j = 0;
+        while(token != NULL){
+            ret->column_names[j] = copy_string(token);
+            if (strlen(token) > ret->formatting[j]){
+                ret->formatting[j] = strlen(token);
+            }
+            j++;
+            token = strtok(NULL, delim);
+            
         }
     }
+
+    int initial_i = ret->column_names_exist;
+
+    /* Load in entries into dataframe */
+    for(i=0; i<lines-initial_i; i++){
+        ret->df[i] = create_empty_series(datatypes, num_columns);
+        char* token = strtok(buff[i+initial_i], delim);
+        int j=0;
+        while(token != NULL){
+            switch(ret->datatypes[j]){
+                case INT: ret->df[i]->set(ret->df[i], j, integer(atoi(token)));
+                    if(ceil(log10(atoi(token))) > ret->formatting[j]){
+                        ret->formatting[j] = ceil(log10(atoi(token)));
+                    }
+                    break;
+                case STRING: ret->df[i]->set(ret->df[i], j, copy_string(token));
+                    if (strlen(token) > ret->formatting[j]){
+                        ret->formatting[j] = strlen(token);
+                    }
+                    break;
+                case DOUBLE: ret->df[i]->set(ret->df[i], j, doub(strtod(token, NULL)));
+                    break;
+                default:; fprintf(stderr, "Error on Row: %d\n", i); assert(0);
+            }
+            j++;
+            token = strtok(NULL, delim);
+        }
+    }
+
+    /* Add function pointers */
+    ret->columns = &df_columns;
+    ret->dtypes = &df_dtypes;
+    ret->head = &df_print_head;
+    ret->tail = &df_print_tail;
+    ret->print_conditional = &df_print_condition;
+    ret->print_col_freq = &df_frequency_table_col;
+
+    ret->size = &df_size;
+    ret->drop_columns = &df_delete_columns;
+    ret->rename_column = &df_column_rename;
+    ret->resize = &df_resize;
+    ret->nunique_col = &df_nunique_col;
+    ret->swapaxes= &df_colswap;
+    ret->merge = &df_applymerge;
+    ret->mean = &df_mean;
+    
+    return ret;
 }
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/********************** Helper Functions for Dataframe ***********************/
+/*****************************************************************************/
+
 static void df_print_help(dataframe_t* df, int row){
     int i;
     for(i=0; i<df->num_columns; i++){
@@ -311,10 +337,23 @@ static void df_print_help(dataframe_t* df, int row){
     printf("\n");
 }
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: column_name_index
+ *
+ * Arguments: dataframe
+ *            column name you want index of
+ *
+ * Returns: index of column name
+ * 
+ * Dependency: utils.h
+ */
 static int column_name_index(dataframe_t* df, char* col_name)
 {
+    assert(df != NULL);
+    assert(col_name != NULL);
     if (df->column_names_exist == NOT_LABELLED){
-        assert(0);
+        assert(0 && "Dataframe has no column names");
     }
     int index = lsearch(df->column_names, df->num_columns, col_name);
     if (index < 0){
@@ -322,56 +361,59 @@ static int column_name_index(dataframe_t* df, char* col_name)
         assert(0);
     }
     return index;
-    
 }
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/********************* Printing Functions for Dataframe **********************/
+/*****************************************************************************/
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
- * Function: df_print_condition
+ * Function: df_dtypes
  *
  * Arguments: dataframe
- *            name of column conditional tested on
- *            condition each column entry is tested for equality against
- *             example: df_print_condition(df, "Animals", "Dog");
  *
- * Returns: Void (prints the rows where the column entry equals the condition)
+ * Returns: Void (prints out datatypes of columns in dataframe)
  * 
- * Dependency: utility.h
- *             column_name_index
- *             df_print_help
+ * Dependency: utils.h
  */
-static void df_print_condition(dataframe_t* df, char* col_name, void* condition)
+static void df_dtypes(dataframe_t* df)
 {
     assert(df != NULL);
-    assert(col_name != NULL);
-    assert(condition != NULL);
     int i;
+    for(i=0; i<df->num_columns; i++){
+        switch(df->datatypes[i]){
+            case INT: printf("Integer\n"); break;
+            case STRING: printf("String\n"); break;
+            case DOUBLE: printf("Double\n"); break;
+            default: assert(0);
+        }
+    }
+}
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_columns
+ *
+ * Arguments: dataframe
+ *
+ * Returns: Void (prints all column names of dataframe)
+ *
+ * Dependency: None
+ */
+static void df_columns(dataframe_t* df)
+{
+    assert(df != NULL);
     if (df->column_names_exist == NOT_LABELLED){
         fprintf(stderr, "No column names associated\n");
         assert(0 && "No Column Names");
     }
-    else if (df->column_names_exist == LABELLED){
-        for(i=0; i<df->num_columns; i++){
-            printf("%*s ", df->formatting[i], df->column_names[i]);
-        }
-        printf("\n");
+    int i;
+    for(i=0; i<df->num_columns; i++){
+        printf("%d: %s\n", i, df->column_names[i]);
     }
-    int index = column_name_index(df, col_name);
-    for(i=0; i<df->num_rows; i++){
-        int unsatisfied = 1;
-        void* data = df->df[i]->series[index];
-        switch(df->datatypes[index]){
-            case INT: unsatisfied = int_cmp(data, condition); break;
-            case STRING: unsatisfied = str_cmp(data, condition); break;
-            case DOUBLE: unsatisfied = double_cmp(data, condition); break;
-            default: assert(0);
-        }
-        if (!unsatisfied){
-            df_print_help(df, i);
-        }
-    }
-    free(condition);
 }
 //-----------------------------------------------------------------------------
 
@@ -440,6 +482,85 @@ static void df_print_tail(dataframe_t* df, int n)
 }
 //-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_print_condition
+ *
+ * Arguments: dataframe
+ *            name of column conditional tested on
+ *            condition each column entry is tested for equality against
+ *             example: df_print_condition(df, "Animals", "Dog");
+ *
+ * Returns: Void (prints the rows where the column entry equals the condition)
+ * 
+ * Dependency: utils.h
+ *             column_name_index
+ *             df_print_help
+ */
+static void df_print_condition(dataframe_t* df, char* col_name, void* condition)
+{
+    assert(df != NULL);
+    assert(col_name != NULL);
+    assert(condition != NULL);
+    int i;
+
+    if (df->column_names_exist == NOT_LABELLED){
+        fprintf(stderr, "No column names associated\n");
+        assert(0 && "No Column Names");
+    }
+    else if (df->column_names_exist == LABELLED){
+        for(i=0; i<df->num_columns; i++){
+            printf("%*s ", df->formatting[i], df->column_names[i]);
+        }
+        printf("\n");
+    }
+    int index = column_name_index(df, col_name);
+    for(i=0; i<df->num_rows; i++){
+        int unsatisfied = 1;
+        void* data = df->df[i]->series[index];
+        switch(df->datatypes[index]){
+            case INT: unsatisfied = int_cmp(data, condition); break;
+            case STRING: unsatisfied = str_cmp(data, condition); break;
+            case DOUBLE: unsatisfied = double_cmp(data, condition); break;
+            default: assert(0);
+        }
+        if (!unsatisfied){
+            df_print_help(df, i);
+        }
+    }
+    free(condition);
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_frequency_table_col
+ *
+ * Arguments: dataframe
+ *            name of column you want frequencies of
+ *
+ * Returns: Void (prints frequency table of column name)
+ *
+ * Dependency: utils.h
+ *             series_colswap
+ */
+static void df_frequency_table_col(dataframe_t* df, char* col_name)
+{
+    assert(df != NULL);
+    assert(col_name != NULL);
+    int index = column_name_index(df, col_name);
+    int dtype = df->datatypes[index];
+    hashtable_t* h = create_simple_hashtable(df->num_rows, dtype);
+    int i;
+    for(i=0; i<df->num_rows; i++){
+        h->insert(h, scalar_copy(df->df[i]->series[index], dtype), NULL);
+    }
+    h->print_frequencies(h, df->formatting[index]);
+    h->destroy(h);
+}
+//-----------------------------------------------------------------------------
+
+
 #if 0
 static void dataframe_print(dataframe_t* df)
 {
@@ -484,29 +605,7 @@ static int df_size(dataframe_t* df)
 }
 //-----------------------------------------------------------------------------
 
-/*****************************************************************************/
-/**----------------------------------------------------------------------------
- * Function: df_columns
- *
- * Arguments: dataframe
- *
- * Returns: Void (prints all column names of dataframe)
- *
- * Dependency: None
- */
-static void df_columns(dataframe_t* df)
-{
-    assert(df != NULL);
-    if (df->column_names_exist == NOT_LABELLED){
-        fprintf(stderr, "No column names associated\n");
-        assert(0 && "No Column Names");
-    }
-    int i;
-    for(i=0; i<df->num_columns; i++){
-        printf("%d: %s\n", i, df->column_names[i]);
-    }
-}
-//-----------------------------------------------------------------------------
+
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
@@ -661,32 +760,7 @@ static double df_mean(dataframe_t* df, int axis, char* name)
 }
 //-----------------------------------------------------------------------------
 
-/*****************************************************************************/
-/**----------------------------------------------------------------------------
- * Function: df_frequency_table_col
- *
- * Arguments: dataframe
- *            name of column you want frequencies of
- *
- * Returns: Void (prints frequency table of column name)
- *
- * Dependency: utils.h
- *             series_colswap
- */
-static void df_frequency_table_col(dataframe_t* df, char* col_name)
-{
-    assert(df != NULL);
-    assert(col_name != NULL);
-    int index = column_name_index(df, col_name);
-    hashtable_t* h = create_simple_hashtable(df->num_rows, df->datatypes[index]);
-    int i;
-    for(i=0; i<df->num_rows; i++){
-        h->insert(h, scalar_copy(df->df[i]->series[index], df->datatypes[index]) , NULL);
-    }
-    h->print_frequencies(h, df->formatting[index]);
-    h->destroy(h);
-}
-//-----------------------------------------------------------------------------
+
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
