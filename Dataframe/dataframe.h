@@ -16,12 +16,12 @@ struct series{
     int num_columns;
     int alloc_columns;
 
-    int (*set)(series_t* s, int col_num, void* data);
+    void (*set)(series_t* s, int col_num, void* data);
     void* (*get)(series_t* s, int col_num);
     void (*del)(series_t* s, int col_num);
     void (*resize)(series_t* s, int new_size);
-    int (*col_swap)(series_t* s, int c1, int c2);
-    int (*destroy)(series_t* s);
+    void (*col_swap)(series_t* s, int c1, int c2);
+    void (*destroy)(series_t* s);
 };
 
 series_t* create_empty_series(int* datatypes, int n);

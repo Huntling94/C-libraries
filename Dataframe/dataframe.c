@@ -9,13 +9,10 @@
 #include "..\Files\files.h"
 #include "..\Hashtable\hashtable.h"
 
-#define SUCCESSFULLY_SET_SERIES_ENTRY 101
 #define FAILURE_COL_NUM_EXCEED_SERIES_LEN 199
 
 #define PRINT_ROW 0
 #define PRINT_COLUMN 1
-
-
 
 #define NOT_UNIQUE 0
 #define UNIQUE 1
@@ -34,27 +31,45 @@ static void df_print_tail(dataframe_t* df, int n);
 static void df_print_condition(dataframe_t* df, char* col_name, void* condition);
 static void df_frequency_table_col(dataframe_t* df, char* col_name);
 
-static int  df_size(dataframe_t* df);
-
-static void df_delete_columns(dataframe_t* df, char** col_names, int n);
-static void df_resize(dataframe_t* df, int new_size);
-static int  df_nunique_col(dataframe_t* df, char* col_name, int dropna);
+/* Operation functions on dataframe */
 static void df_column_rename(dataframe_t* df, char* old_name, char* new_name);
 static void df_colswap(dataframe_t* df, int c1, int c2);
-
+static void df_delete_columns(dataframe_t* df, char** col_names, int n);
+static void df_resize(dataframe_t* df, int new_size);
 static void df_applymerge(dataframe_t* df, char* col_name1, char* col_name2, int mode);
 
+/* Calculation functions for dataframe */
+static int    df_size(dataframe_t* df);
+static int    df_nunique_col(dataframe_t* df, char* col_name, int dropna);
 static double df_mean(dataframe_t* df, int axis, char* name);
 
 
 
-static int series_set(series_t* s, int col_num, void* data);
-static void* series_get(series_t* s, int col_num);
-static void series_del(series_t* s, int col_num);
-static int destroy_series(series_t* s);
-static void series_resize(series_t* s, int new_size);
-static int series_colswap(series_t* s, int c1, int c2);
 
+
+static void  series_set(series_t* s, int col_num, void* data);
+static void* series_get(series_t* s, int col_num);
+static void  series_del(series_t* s, int col_num);
+static void  destroy_series(series_t* s);
+static void  series_resize(series_t* s, int new_size);
+static void  series_colswap(series_t* s, int c1, int c2);
+
+
+/*****************************************************************************/
+/********************* Constructor Functions for Series **********************/
+/*****************************************************************************/
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: create_empty_series
+ *
+ * Arguments: datatypes for each entry in the series
+ *            number of entries in the series
+ *
+ * Returns: initialised series
+ * 
+ * Dependency: utils.h
+ */
 series_t* create_empty_series(int* datatypes, int n)
 {
     series_t* ret = malloc(sizeof(*ret));
@@ -80,15 +95,11 @@ series_t* create_empty_series(int* datatypes, int n)
     ret->destroy = &destroy_series;
     return ret;
 }
+//-----------------------------------------------------------------------------
 
-static int series_set(series_t* s, int col_num, void* data)
-{
-    if (col_num > s->num_columns){
-        assert(0 && "Column Num exceeds the number of columns in Series");
-    }
-    s->series[col_num] = data;
-    return SUCCESSFULLY_SET_SERIES_ENTRY;
-}
+/*****************************************************************************/
+/*********************** Operation Functions on Series ***********************/
+/*****************************************************************************/
 
 static void* series_get(series_t* s, int col_num)
 {
@@ -97,7 +108,30 @@ static void* series_get(series_t* s, int col_num)
     }
     return s->series[col_num];
 }
-int print_series(series_t* s, int mode);
+
+static void series_set(series_t* s, int col_num, void* data)
+{
+    if (col_num > s->num_columns){
+        assert(0 && "Column Num exceeds the number of columns in Series");
+    }
+    s->series[col_num] = data;
+    return;
+}
+
+static void series_resize(series_t* s, int new_size)
+{
+    assert(s != NULL);
+    /* This function only resizes upwards, not downwards */
+    if(s->alloc_columns >= new_size){
+        return;
+    }
+    s->alloc_columns = new_size;
+    s->series = realloc(s->series, s->alloc_columns * sizeof(*s->series));
+    s->datatypes = realloc(s->datatypes, s->alloc_columns * sizeof(*s->datatypes));
+    assert(unwanted_null(s->series));
+    assert(unwanted_null(s->datatypes));
+}
+
 static void series_del(series_t* s, int col_num)
 {
     if (col_num > s->num_columns){
@@ -115,16 +149,20 @@ static void series_del(series_t* s, int col_num)
     return;
 }
 
-
-static int series_colswap(series_t* s, int c1, int c2)
+static void series_colswap(series_t* s, int c1, int c2)
 {
     if (c1 > s->num_columns || c2 > s->num_columns){
-        return FAILURE_COL_NUM_EXCEED_SERIES_LEN;
+        assert(0 && "Column Num exceeds the number of columns in dataframe");
     }
+    else if (c1 <= 0 || c2 <= 0){
+        assert(0 && "Cannot have negative column numbers");
+    }
+
     scalar_swap(&s->series[c1], &s->series[c2], sizeof(void*));
     scalar_swap(&s->datatypes[c1], &s->datatypes[c2], sizeof(int*));
-    return 102;
+    return;
 }
+
 
 int print_series(series_t* s, int mode)
 {
@@ -148,19 +186,7 @@ int print_series(series_t* s, int mode)
     return 100;
 }
 
-static void series_resize(series_t* s, int new_size)
-{
-    assert(s != NULL);
-    /* This function only resizes upwards, not downwards */
-    if(s->alloc_columns >= new_size){
-        return;
-    }
-    s->alloc_columns = new_size;
-    s->series = realloc(s->series, s->alloc_columns * sizeof(*s->series));
-    s->datatypes = realloc(s->datatypes, s->alloc_columns * sizeof(*s->datatypes));
-    assert(unwanted_null(s->series));
-    assert(unwanted_null(s->datatypes));
-}
+
 
 int print_datatypes(series_t* s)
 {
@@ -176,19 +202,32 @@ int print_datatypes(series_t* s)
     return 105;
 }
 
-static int destroy_series(series_t* s)
+/*****************************************************************************/
+/********************** Destructor Functions for Series **********************/
+/*****************************************************************************/
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: destroy_series
+ *
+ * Arguments: series
+ *
+ * Returns: Void (destroys memory footprint of series)
+ * 
+ * Dependency: None
+ */
+static void destroy_series(series_t* s)
 {
     int i;
-
-    printf("Destroying: %d columns\n", s->num_columns);
     for(i=0; i<s->alloc_columns; i++){
         free(s->series[i]);
     }
     free(s->datatypes);
     free(s->series);
     free(s);
-    return 110;
+    return;
 }
+//-----------------------------------------------------------------------------
 
 /*****************************************************************************/
 /******************* Constructor Functions for Dataframe *********************/
@@ -361,6 +400,41 @@ static int column_name_index(dataframe_t* df, char* col_name)
         assert(0);
     }
     return index;
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_delete_column
+ *
+ * Arguments: dataframe
+ *            column_name to be deleted
+ *
+ * Returns: Void (deletes column from dataframe)
+ *
+ * Dependency: utils.h
+ *             column_name_index
+ *             series_del
+ */
+static void df_delete_column(dataframe_t* df, char* col_name)
+{
+    assert(df != NULL);
+    assert(col_name != NULL);
+    int i;
+
+    int index = column_name_index(df, col_name);
+
+    for(i=0; i<df->num_rows; i++){
+        df->df[i]->del(df->df[i], index);
+    }
+    free(df->column_names[index]);
+    for(i=index; i<df->num_columns-1; i++){
+        df->column_names[i] = df->column_names[i+1];
+        df->formatting[i] = df->formatting[i+1];
+        df->datatypes[i] = df->datatypes[i+1];
+    }
+    df->num_columns--;
+    return;
 }
 //-----------------------------------------------------------------------------
 
@@ -560,88 +634,110 @@ static void df_frequency_table_col(dataframe_t* df, char* col_name)
 }
 //-----------------------------------------------------------------------------
 
-
-#if 0
-static void dataframe_print(dataframe_t* df)
-{
-    int i;
-    printf("Shape: %d x %d\n", df->num_rows, df->num_columns);
-    if (df->column_names_exist == LABELLED){
-        for(i=0; i<df->num_columns; i++){
-            printf("%*s ", df->formatting[i], df->column_names[i]);
-        }
-        printf("\n");
-    }
-    for(i=0; i<df->num_rows; i++){
-        df_print_help(df, i);
-    }
-    printf("\n");
-}
-#endif
-
-void dataframe_print_formatting(dataframe_t* df)
-{
-    assert(df != NULL);
-    int i;
-    for(i=0; i<df->num_columns; i++){
-        printf("%d\n", df->formatting[i]);
-    }
-}
+/*****************************************************************************/
+/********************* Operation Functions on Dataframe **********************/
+/*****************************************************************************/
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
- * Function: df_columns
+ * Function: df_column_rename
  *
  * Arguments: dataframe
+ *            name of column to be renamed
+ *            new name desired
  *
- * Returns: dataframe rows * columns
+ * Returns: Void
  *
  * Dependency: None
  */
-static int df_size(dataframe_t* df)
+static void df_column_rename(dataframe_t* df, char* old_name, char* new_name)
 {
     assert(df != NULL);
-    return df->num_rows * df->num_columns;
+    if (df->column_names_exist == NOT_LABELLED){
+        fprintf(stderr, "No column names associated\n");
+        assert(0 && "No Column Names");
+    }
+    int index = lsearch(df->column_names, df->num_columns, old_name);
+    if (index < 0){
+        fprintf(stderr, "No such Column Name: %s\n", old_name);
+        assert(0);
+    }
+    char* old = df->column_names[index];
+    df->column_names[index] = copy_string(new_name);
+    free(old);
+    if (strlen(new_name) > df->formatting[index]){
+        df->formatting[index] = strlen(new_name);
+    }
 }
 //-----------------------------------------------------------------------------
-
-
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
- * Function: df_nunique_col
+ * Function: df_colswap
  *
  * Arguments: dataframe
- *            column_name to be deleted
+ *            index of c1
+ *            index of c2
  *
- * Returns: Void (deletes column from dataframe)
+ * Returns: Void
  *
  * Dependency: utils.h
- *             column_name_index
- *             series_del
+ *             series_colswap
  */
-static void df_delete_column(dataframe_t* df, char* col_name)
+static void df_colswap(dataframe_t* df, int c1, int c2)
 {
-    assert(df != NULL);
-    assert(col_name != NULL);
+    if (c1 > df->num_columns || c2 > df->num_columns){
+        assert(0 && "Column Num exceeds the number of columns in dataframe");
+    }
+    else if (c1 <= 0 || c2 <= 0){
+        assert(0 && "Cannot have negative column numbers");
+    }
+
     int i;
-
-    int index = column_name_index(df, col_name);
-
     for(i=0; i<df->num_rows; i++){
-        df->df[i]->del(df->df[i], index);
+        df->df[i]->col_swap(df->df[i],c1, c2);
     }
-    free(df->column_names[index]);
-    for(i=index; i<df->num_columns-1; i++){
-        df->column_names[i] = df->column_names[i+1];
-        df->formatting[i] = df->formatting[i+1];
-        df->datatypes[i] = df->datatypes[i+1];
-    }
-    df->num_columns--;
-    return;
+    scalar_swap(&df->datatypes[c1], &df->datatypes[c2], sizeof(int*));
+    scalar_swap(&df->formatting[c1], &df->formatting[c2], sizeof(int*));
+    scalar_swap(&df->column_names[c1], &df->column_names[c2], sizeof(char*));
 }
 //-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_resize
+ *
+ * Arguments: dataframe
+ *            new (increased) number of columns
+ *
+ * Returns: Void
+ *
+ * Dependency: utils.h
+ *             series_resize
+ */
+static void df_resize(dataframe_t* df, int new_size)
+{
+    assert(df != NULL);
+    /* This function only resizes upwards, not downwards */
+    if(df->alloc_columns >= new_size){
+        return;
+    }
+    df->alloc_columns = new_size;
+    df->formatting = realloc(df->formatting,
+                              df->alloc_columns * sizeof(*df->formatting));
+    df->datatypes = realloc(df->datatypes,
+                             df->alloc_columns * sizeof(*df->datatypes));
+    df->column_names = realloc(df->column_names,
+                             df->alloc_columns * sizeof(*df->column_names));
+    assert(unwanted_null(df->formatting));
+    assert(unwanted_null(df->datatypes));
+    assert(unwanted_null(df->column_names));
+    int i;
+    for(i=0; i<df->num_rows; i++){
+        df->df[i]->resize(df->df[i], new_size);
+    }
+}
+//-----------------------------------------------------------------------------
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
@@ -671,22 +767,75 @@ static void df_delete_columns(dataframe_t* df, char** col_names, int n)
 }
 //-----------------------------------------------------------------------------
 
-#if 0
-static void* dataframe_mode_col(dataframe_t* df, char* col_name, int dropna)
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_applymerge
+ *
+ * Arguments: dataframe
+ *            name of first column (merge into this)
+ *            name of second column
+ *            mode of merging two columns (ADDITION, SUBTRACTION)
+ *
+ * Returns: Void (merges second  with first, drops second)
+ *          Only works if both columns have numeric data
+ * 
+ * Dependency: utils.h
+ *             column_name_index
+ *             df_delete_columns
+ *             
+ */
+static void df_applymerge(dataframe_t* df, char* col_name1, char* col_name2,
+                          int mode)
+{
+    int index1 = column_name_index(df, col_name1);
+    int index2 = column_name_index(df, col_name2);
+    int* type1 = &df->datatypes[index1];
+    int* type2 = &df->datatypes[index2];
+    if (!is_numeric(*type1) || !is_numeric(*type2)){
+        fprintf(stderr, "Cannot merge columns as they need to both be numeric:"
+                         " %d, %d\n", *type1, *type2);
+        assert(0 && "Attempting to merge non-numeric data");
+    }
+    int i;
+    int datatype_modified;
+    for(i=0; i<df->num_rows; i++){
+        void* a = df->df[i]->series[index1];
+        void* b = df->df[i]->series[index2];
+        switch(mode){
+            case ADDITION:;
+                datatype_modified = addition(a, b, *type1, *type2); break;
+            case SUBTRACTION:;
+                datatype_modified = subtraction(a, b, *type1, *type2); break;
+        }
+    }
+    if (datatype_modified){
+        scalar_swap(type1, type2, sizeof(*type1));
+    }
+    df->drop_columns(df, &col_name2, 1);
+    return;
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/******************* Calculation Functions for Dataframe *********************/
+/*****************************************************************************/
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: df_size
+ *
+ * Arguments: dataframe
+ *
+ * Returns: dataframe rows * columns
+ *
+ * Dependency: None
+ */
+static int df_size(dataframe_t* df)
 {
     assert(df != NULL);
-    assert(col_name != NULL);
-    int index = column_name_index(df, col_name);
-    hashtable_t* h = create_simple_hashtable(df->num_rows, df->datatypes[index]);
-    int i;
-    for(i=0; i<df->num_rows; i++){
-        h->insert(h, scalar_copy(df->df[i]->series[index], df->datatypes[index]) , NULL);
-    }
-    void* ret = scalar_copy(h->most_frequent(h), df->datatypes[index]);
-    h->destroy(h);
-    return ret;
+    return df->num_rows * df->num_columns;
 }
-#endif
+//-----------------------------------------------------------------------------
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
@@ -761,153 +910,52 @@ static double df_mean(dataframe_t* df, int axis, char* name)
 //-----------------------------------------------------------------------------
 
 
+/* TO DO */
 
-/*****************************************************************************/
-/**----------------------------------------------------------------------------
- * Function: df_applymerge
- *
- * Arguments: dataframe
- *            name of first column (merge into this)
- *            name of second column
- *            mode of merging two columns (ADDITION, SUBTRACTION)
- *
- * Returns: Void (merges second  with first, drops second)
- *          Only works if both columns have numeric data
- * 
- * Dependency: utils.h
- *             column_name_index
- *             df_delete_columns
- *             
- */
-static void df_applymerge(dataframe_t* df, char* col_name1, char* col_name2, int mode)
+#if 0
+static void dataframe_print(dataframe_t* df)
 {
-    int index1 = column_name_index(df, col_name1);
-    int index2 = column_name_index(df, col_name2);
-    int* type1 = &df->datatypes[index1];
-    int* type2 = &df->datatypes[index2];
-    if (!is_numeric(*type1) || !is_numeric(*type2)){
-        fprintf(stderr, "Cannot merge columns as they need to both be numeric: %d, %d\n", *type1, *type2);
-        assert(0);
-        return;
-    }
     int i;
-    int datatype_modified;
-    for(i=0; i<df->num_rows; i++){
-        void* a = df->df[i]->series[index1];
-        void* b = df->df[i]->series[index2];
-        switch(mode){
-            case ADDITION: datatype_modified = addition(a, b, *type1, *type2); break;
-            case SUBTRACTION: datatype_modified = subtraction(a, b, *type1, *type2); break;
+    printf("Shape: %d x %d\n", df->num_rows, df->num_columns);
+    if (df->column_names_exist == LABELLED){
+        for(i=0; i<df->num_columns; i++){
+            printf("%*s ", df->formatting[i], df->column_names[i]);
         }
+        printf("\n");
     }
-    if (datatype_modified){
-        scalar_swap(type1, type2, sizeof(*type1));
+    for(i=0; i<df->num_rows; i++){
+        df_print_help(df, i);
     }
-    df->drop_columns(df, &col_name2, 1);
-    return;
+    printf("\n");
 }
-//-----------------------------------------------------------------------------
+#endif
 
-/*****************************************************************************/
-/**----------------------------------------------------------------------------
- * Function: df_resize
- *
- * Arguments: dataframe
- *            new (increased) number of columns
- *
- * Returns: Void
- *
- * Dependency: utils.h
- *             series_resize
- */
-static void df_resize(dataframe_t* df, int new_size)
+void dataframe_print_formatting(dataframe_t* df)
 {
     assert(df != NULL);
-    /* This function only resizes upwards, not downwards */
-    if(df->alloc_columns >= new_size){
-        return;
-    }
-    df->alloc_columns = new_size;
-    df->formatting = realloc(df->formatting,
-                              df->alloc_columns * sizeof(*df->formatting));
-    df->datatypes = realloc(df->datatypes,
-                             df->alloc_columns * sizeof(*df->datatypes));
-    df->column_names = realloc(df->column_names,
-                             df->alloc_columns * sizeof(*df->column_names));
-    assert(unwanted_null(df->formatting));
-    assert(unwanted_null(df->datatypes));
-    assert(unwanted_null(df->column_names));
     int i;
-    for(i=0; i<df->num_rows; i++){
-        df->df[i]->resize(df->df[i], new_size);
+    for(i=0; i<df->num_columns; i++){
+        printf("%d\n", df->formatting[i]);
     }
 }
-//-----------------------------------------------------------------------------
 
-/*****************************************************************************/
-/**----------------------------------------------------------------------------
- * Function: df_column_rename
- *
- * Arguments: dataframe
- *            name of column to be renamed
- *            new name desired
- *
- * Returns: Void
- *
- * Dependency: None
- */
-static void df_column_rename(dataframe_t* df, char* old_name, char* new_name)
+
+#if 0
+static void* dataframe_mode_col(dataframe_t* df, char* col_name, int dropna)
 {
     assert(df != NULL);
-    if (df->column_names_exist == NOT_LABELLED){
-        fprintf(stderr, "No column names associated\n");
-        assert(0 && "No Column Names");
-    }
-    int index = lsearch(df->column_names, df->num_columns, old_name);
-    if (index < 0){
-        fprintf(stderr, "No such Column Name: %s\n", old_name);
-        assert(0);
-    }
-    char* old = df->column_names[index];
-    df->column_names[index] = copy_string(new_name);
-    free(old);
-    if (strlen(new_name) > df->formatting[index]){
-        df->formatting[index] = strlen(new_name);
-    }
-}
-//-----------------------------------------------------------------------------
-
-/*****************************************************************************/
-/**----------------------------------------------------------------------------
- * Function: df_colswap
- *
- * Arguments: dataframe
- *            index of c1
- *            index of c2
- *
- * Returns: Void
- *
- * Dependency: utils.h
- *             series_colswap
- */
-static void df_colswap(dataframe_t* df, int c1, int c2)
-{
-    if (c1 > df->num_columns || c2 > df->num_columns){
-        assert(0 && "Column Num exceeds the number of columns in dataframe");
-    }
-    else if (c1 <= 0 || c2 <= 0){
-        assert(0 && "Cannot have negative column numbers");
-    }
-
+    assert(col_name != NULL);
+    int index = column_name_index(df, col_name);
+    hashtable_t* h = create_simple_hashtable(df->num_rows, df->datatypes[index]);
     int i;
     for(i=0; i<df->num_rows; i++){
-        df->df[i]->col_swap(df->df[i],c1, c2);
+        h->insert(h, scalar_copy(df->df[i]->series[index], df->datatypes[index]) , NULL);
     }
-    scalar_swap(&df->datatypes[c1], &df->datatypes[c2], sizeof(int*));
-    scalar_swap(&df->formatting[c1], &df->formatting[c2], sizeof(int*));
-    scalar_swap(&df->column_names[c1], &df->column_names[c2], sizeof(char*));
+    void* ret = scalar_copy(h->most_frequent(h), df->datatypes[index]);
+    h->destroy(h);
+    return ret;
 }
-//-----------------------------------------------------------------------------
+#endif
 
 #if 0
 static void dataframe_append_winrate(dataframe_t* df, char* w, char* l)
