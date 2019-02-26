@@ -205,6 +205,18 @@ static void series_del(series_t* s, int col_num)
 }
 //-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: series_colswap
+ *
+ * Arguments: series
+ *            column number
+ *            another column number
+ *
+ * Returns: Void (swaps columns in series)
+ * 
+ * Dependency: utils.h
+ */
 static void series_colswap(series_t* s, int c1, int c2)
 {
     if (c1 > s->num_columns || c2 > s->num_columns){
@@ -218,6 +230,7 @@ static void series_colswap(series_t* s, int c1, int c2)
     scalar_swap(&s->datatypes[c1], &s->datatypes[c2], sizeof(int*));
     return;
 }
+//-----------------------------------------------------------------------------
 
 
 int print_series(series_t* s, int mode)
@@ -242,9 +255,7 @@ int print_series(series_t* s, int mode)
     return 100;
 }
 
-
-
-int print_datatypes(series_t* s)
+void print_datatypes(series_t* s)
 {
     int i;
     for(i=0; i<s->num_columns; i++){
@@ -255,7 +266,7 @@ int print_datatypes(series_t* s)
             default: assert(0);
         }
     }
-    return 105;
+    return;
 }
 
 /*****************************************************************************/
