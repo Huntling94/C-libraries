@@ -20,6 +20,7 @@ struct rbt_node{
     int frequency;
     rbt_node_t* left;
     rbt_node_t* right;
+    rbt_node_t* parent;
 };
 
 struct rbt{

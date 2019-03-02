@@ -23,6 +23,7 @@ void error_set_to_null_message(char* noun)
 static void in_order_traversal(rbt_t* tree, void action(void* data));
 static void post_order_traversal(rbt_t* tree, void action(void* data));
 static void destroy_rbt(rbt_t* tree, void free_data(void* data));
+void insert_fixup(rbt_t* tree, rbt_node_t* node);
 
 rbt_t* create_rbt(int cmp_func(const void* a, const void* b))
 {
@@ -57,6 +58,7 @@ rbt_node_t* create_rbt_node(void* data, unsigned int colour)
     ret->frequency = 1;
     ret->left = NULL;
     ret->right = NULL;
+    ret->parent = NULL;
     return ret;
 }
 
@@ -64,6 +66,7 @@ rbt_node_t* create_rbt_node(void* data, unsigned int colour)
 
 void rbt_insert(rbt_t* tree, void* data)
 {
+    printf("Inserting: %d\n", *((int*)data));
     /* Error Checks */
     if(tree == NULL){
         error_set_to_null_message("tree");
@@ -102,14 +105,19 @@ void rbt_insert(rbt_t* tree, void* data)
     }
 
     /* Insert node */
+    inserting_node->parent = prev;
     if (result > 0){
         prev->left = inserting_node;
+        
     }
     else{
         prev->right = inserting_node;
     }
     /* TODO Balance RBT */
+    printf("About to fix-up: %d, whose parent is: %d\n", *((int*)inserting_node->data), *((int*)inserting_node->parent->data));
+    insert_fixup(tree, inserting_node);
 }
+//-----------------------------------------------------------------------------
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
@@ -120,6 +128,7 @@ void rbt_insert(rbt_t* tree, void* data)
  *
  * Returns: void
  *
+ * Dependency: node_action_order
  */
 static void node_action_order(rbt_node_t* node, void action(void* data));
 
@@ -147,11 +156,18 @@ static void node_action_order(rbt_node_t* node, void action(void* data))
  *
  * Returns: void
  *
+ * Dependency: node_action_all
  */
 static void node_action_all(rbt_node_t* node, void action(void* data));
 
 static void post_order_traversal(rbt_t* tree, void action(void* data))
 {
+    if (action == *****&**********&****&*****&****&*******************&**free){
+        error_message("You've tried to pass the free function in, however "
+                      "this will cause a memory leak. To destroy the "
+                      "red black tree try calling "
+                      "tree->destroy(tree, free) instead.");
+    }
     node_action_all(tree->root, action);
 }
 
@@ -195,6 +211,97 @@ static void destroy_rbt(rbt_t* tree, void free_data(void* data))
 }
 //-----------------------------------------------------------------------------
 
+void left_rotate(rbt_t* tree, rbt_node_t* x)
+{
+    rbt_node_t* y = x->right;
+    x->right = y->left;
+    if(y->left != NULL){
+        y->left->parent = x;
+    }
+    y->parent = x->parent;
+    if (x->parent == NULL){
+        tree->root = y;
+    }
+    else if (x == x->parent->left){
+        x->parent->left = y;
+    }
+    else{
+        x->parent->right = y;
+    }
+    y->left = x;
+    x->parent = y;
+}
+
+void right_rotate(rbt_t* tree, rbt_node_t* y)
+{
+    rbt_node_t* x = y->right;
+    y->right = x->left;
+    if(x->left != NULL){
+        x->left->parent = y;
+    }
+    x->parent = y->parent;
+    if (y->parent == NULL){
+        tree->root = x;
+    }
+    else if (y == y->parent->left){
+        y->parent->left = x;
+    }
+    else{
+        y->parent->right = x;
+    }
+    x->left = y;
+    y->parent = x;
+}
+
+void insert_fixup(rbt_t* tree, rbt_node_t* node)
+{
+    (node->parent->colour == RED) ? (printf("Colour of parent node is Red\n")) : printf("Colour of parent node is Black\n");
+    while(node->parent->colour == RED){
+        if(node->parent == node->parent->parent->left){
+            rbt_node_t* y = node->parent->parent->right;
+            if(y->colour == RED){
+                node->parent->colour = BLACK;
+                y->colour = BLACK;
+                node->parent->parent->colour = RED;
+                node = node->parent->parent;
+            }
+            else {
+                if (node == node->parent->right){
+                node = node->parent;
+                left_rotate(tree, node);
+                }
+                node->parent->colour = BLACK;
+                node->parent->parent->colour = RED;
+                right_rotate(tree, node->parent->parent);
+            }
+        }
+        else{
+            printf("Else statement\n");
+            assert(node->parent->parent != NULL);
+            rbt_node_t* y = node->parent->parent->left;
+            if(y->colour == RED){
+                printf("If statement\n");
+                node->parent->colour = BLACK;
+                y->colour = BLACK;
+                node->parent->parent->colour = RED;
+                node = node->parent->parent;
+            }
+            else {
+                if (node == node->parent->left){
+                printf("Else If statement\n");
+                node = node->parent;
+                right_rotate(tree, node);
+                }
+                node->parent->colour = BLACK;
+                node->parent->parent->colour = RED;
+                left_rotate(tree, node->parent->parent);
+            }
+        }
+    } // end while
+    tree->root->colour = BLACK;
+    printf("Done\n");
+    tree->in_order_traversal(tree, print_int);
+}
 int main(void)
 {
     rbt_t* tree = create_rbt(int_cmp);
@@ -206,6 +313,7 @@ int main(void)
     rbt_insert(tree, integer(12));
     rbt_insert(tree, integer(5));
     rbt_insert(tree, integer(1));
+    rbt_insert(tree, integer(6));
     (tree->root->colour == RED) ? (printf("Red Node\n")) : (printf("Black Node\n"));
     tree->in_order_traversal(tree, print_int);
     printf("Tree address: %p\n", tree);
