@@ -4,7 +4,6 @@
 #include <assert.h>
 #include "rbt.h"
 
-static rbt_node_t* create_rbt_node(void* data, unsigned int colour);
 
 void error_message(char* msg)
 {
@@ -22,7 +21,8 @@ void error_set_to_null_message(char* noun)
 }
 
 static void in_order_traversal(rbt_t* tree, void action(void* data));
-
+static void post_order_traversal(rbt_t* tree, void action(void* data));
+static void destroy_rbt(rbt_t* tree, void free_data(void* data));
 
 rbt_t* create_rbt(int cmp_func(const void* a, const void* b))
 {
@@ -33,6 +33,9 @@ rbt_t* create_rbt(int cmp_func(const void* a, const void* b))
 
     ret->cmp = cmp_func;
     ret->in_order_traversal = in_order_traversal;
+    ret->post_order_traversal = post_order_traversal;
+
+    ret->destroy = destroy_rbt;
     return ret;
 }
 
@@ -135,6 +138,62 @@ static void node_action_order(rbt_node_t* node, void action(void* data))
 }
 //-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: post_order_traversal
+ *
+ * Arguments: the red black tree
+ *            a function that applies action to data in node, post order
+ *
+ * Returns: void
+ *
+ */
+static void node_action_all(rbt_node_t* node, void action(void* data));
+
+static void post_order_traversal(rbt_t* tree, void action(void* data))
+{
+    node_action_all(tree->root, action);
+}
+
+static void node_action_all(rbt_node_t* node, void action(void* data))
+{
+    if (node){
+        node_action_all(node->left, action);
+        node_action_all(node->right, action);
+        action(node->data);
+
+        
+    }
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: destroy_rbt
+ *
+ * Arguments: The red black tree;
+              a free function for each data in each node;
+ *
+ * Returns: void
+ *
+ * Dependency: recursive_destroy
+ *
+ * Note that the free function from stdlib.h can be passed in for suitable data
+ */
+static void recursive_destroy(rbt_node_t* node, void action(void* data)){
+    if (node){
+        recursive_destroy(node->left, action);
+        recursive_destroy(node->right, action);
+        action(node->data);
+        free(node);
+    }
+}
+static void destroy_rbt(rbt_t* tree, void free_data(void* data))
+{
+    recursive_destroy(tree->root, free_data);
+    free(tree);
+}
+//-----------------------------------------------------------------------------
 
 int main(void)
 {
@@ -149,5 +208,12 @@ int main(void)
     rbt_insert(tree, integer(1));
     (tree->root->colour == RED) ? (printf("Red Node\n")) : (printf("Black Node\n"));
     tree->in_order_traversal(tree, print_int);
-
+    printf("Tree address: %p\n", tree);
+    printf("Root: %p\n", tree->root);
+    print_int(tree->root->data);
+    tree->destroy(tree, free);
+    (tree->root->colour == RED) ? (printf("Red Node\n")) : (printf("Black Node\n"));
+    print_int(tree->root->data);
+    printf("Root: %p\n", tree->root);
+    printf("Tree address: %p\n", tree);
 }
