@@ -362,15 +362,25 @@ void print(tree_t* tree, void print(void* data))
  * Arguments: the tree,
               a free function for each data in each node.
  *
- * Returns: the number of unique nodes in the tree
+ * Returns: void
  *
- * Dependency: post_order_traversal
+ * Dependency: recursive_destroy
  *
  * Note that the free function from stdlib.h can be passed in for suitable data
  */
+
+static void recursive_destroy(node_t* node, void free_data(void* data)
+{
+    if(node){
+        recursive_destroy(node->left, free_data);
+        recursive_destroy(node->right, free_data);
+        free_data(node->data);
+        free(node);
+    }
+}
 static void destroy(tree_t* tree, void free_data(void* data))
 {
-    tree->post_order_traversal(tree, free_data);
+    recursive_destroy(tree->root, free_data);
     tree->root = NULL;
 }
 //-----------------------------------------------------------------------------
