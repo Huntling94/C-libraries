@@ -4,6 +4,9 @@
 #include <assert.h>
 #include "rbt.h"
 
+static rbt_node_t nil = {0, BLACK, UNVISITED, 0, 0, 0, 0};        
+
+#define NIL &nil
 
 void error_message(char* msg)
 {
@@ -30,7 +33,7 @@ rbt_t* create_rbt(int cmp_func(const void* a, const void* b))
     rbt_t* ret = malloc(sizeof *ret);
     assert(unwanted_null(ret));
 
-    ret->root = NULL;
+    ret->root = NIL;
 
     ret->cmp = cmp_func;
     ret->in_order_traversal = in_order_traversal;
@@ -56,9 +59,9 @@ rbt_node_t* create_rbt_node(void* data, unsigned int colour)
     ret->colour = colour;
     ret->visited = UNVISITED;
     ret->frequency = 1;
-    ret->left = NULL;
-    ret->right = NULL;
-    ret->parent = NULL;
+    ret->left = NIL;
+    ret->right = NIL;
+    ret->parent = NIL;
     return ret;
 }
 
@@ -77,19 +80,19 @@ void rbt_insert(rbt_t* tree, void* data)
 
     rbt_node_t* inserting_node = create_rbt_node(data, RED);
     /* First insertion into tree, colour black */
-    if(tree->root == NULL){
+    if(tree->root == NIL){
         inserting_node->colour = BLACK;
         tree->root = inserting_node;
         return;
     }
-    rbt_node_t* prev = NULL;        // parent of curr
+    rbt_node_t* prev = NIL;        // parent of curr
     rbt_node_t* curr = tree->root;
     int result;                     // result of comparison
     /* Find node to insert into
-     * curr will be set to NULL (we insert into here)
+     * curr will be set to NIL (we insert into here)
      * prev will be the parent of the node we insert into
      */
-    while (curr != NULL){
+    while (curr != NIL){
         prev = curr;
         result = tree->cmp(curr->data, data);
         if (result == 0){
@@ -139,7 +142,7 @@ static void in_order_traversal(rbt_t* tree, void action(void* data))
 
 static void node_action_order(rbt_node_t* node, void action(void* data))
 {
-    if (node){
+    if (node != NIL){
         node_action_order(node->left, action);
         action(node->data);
         node_action_order(node->right, action);
@@ -173,7 +176,7 @@ static void post_order_traversal(rbt_t* tree, void action(void* data))
 
 static void node_action_all(rbt_node_t* node, void action(void* data))
 {
-    if (node){
+    if (node != NIL){
         node_action_all(node->left, action);
         node_action_all(node->right, action);
         action(node->data);
@@ -197,7 +200,7 @@ static void node_action_all(rbt_node_t* node, void action(void* data))
  * Note that the free function from stdlib.h can be passed in for suitable data
  */
 static void recursive_destroy(rbt_node_t* node, void action(void* data)){
-    if (node){
+    if (node != NIL){
         recursive_destroy(node->left, action);
         recursive_destroy(node->right, action);
         action(node->data);
@@ -215,11 +218,11 @@ void left_rotate(rbt_t* tree, rbt_node_t* x)
 {
     rbt_node_t* y = x->right;
     x->right = y->left;
-    if(y->left != NULL){
+    if(y->left != NIL){
         y->left->parent = x;
     }
     y->parent = x->parent;
-    if (x->parent == NULL){
+    if (x->parent == NIL){
         tree->root = y;
     }
     else if (x == x->parent->left){
@@ -234,13 +237,13 @@ void left_rotate(rbt_t* tree, rbt_node_t* x)
 
 void right_rotate(rbt_t* tree, rbt_node_t* y)
 {
-    rbt_node_t* x = y->right;
-    y->right = x->left;
-    if(x->left != NULL){
-        x->left->parent = y;
+    rbt_node_t* x = y->left;
+    y->left = x->right;
+    if(x->right != NIL){
+        x->right->parent = y;
     }
     x->parent = y->parent;
-    if (y->parent == NULL){
+    if (y->parent == NIL){
         tree->root = x;
     }
     else if (y == y->parent->left){
@@ -249,7 +252,7 @@ void right_rotate(rbt_t* tree, rbt_node_t* y)
     else{
         y->parent->right = x;
     }
-    x->left = y;
+    x->right = y;
     y->parent = x;
 }
 
@@ -258,27 +261,43 @@ void insert_fixup(rbt_t* tree, rbt_node_t* node)
     (node->parent->colour == RED) ? (printf("Colour of parent node is Red\n")) : printf("Colour of parent node is Black\n");
     while(node->parent->colour == RED){
         if(node->parent == node->parent->parent->left){
+            printf("If statement\n");
+            printf("Node: "); print_int(node->data);
+            printf("Parent: "); print_int(node->parent->data);
+            printf("Parents parent: "); print_int(node->parent->parent->data);
             rbt_node_t* y = node->parent->parent->right;
+            printf("Upeeee: %p\n", y);
+            printf("%d\n", y->colour);
             if(y->colour == RED){
+                printf("2nd If statement\n");
                 node->parent->colour = BLACK;
                 y->colour = BLACK;
                 node->parent->parent->colour = RED;
                 node = node->parent->parent;
             }
             else {
+                printf("Else statement\n");
                 if (node == node->parent->right){
-                node = node->parent;
-                left_rotate(tree, node);
+                    printf("Ifff Left Rotate Soon\n");
+                    node = node->parent;
+                    left_rotate(tree, node);
                 }
+                printf("Right Rotate Soon\n");
                 node->parent->colour = BLACK;
                 node->parent->parent->colour = RED;
+                printf("Tik tok\n");
                 right_rotate(tree, node->parent->parent);
+                printf("Fail blog\n");
             }
         }
-        else{
-            printf("Else statement\n");
-            assert(node->parent->parent != NULL);
+        else{ // parent is to the right of its parent
+            printf("Else statement\n");;
+            printf("Node: "); print_int(node->data);
+            printf("Parent: "); print_int(node->parent->data);
+            printf("Parents parent: "); print_int(node->parent->parent->data);
             rbt_node_t* y = node->parent->parent->left;
+            printf("Heree: %p\n", y);
+            printf("%d\n", y->colour);
             if(y->colour == RED){
                 printf("If statement\n");
                 node->parent->colour = BLACK;
@@ -287,20 +306,24 @@ void insert_fixup(rbt_t* tree, rbt_node_t* node)
                 node = node->parent->parent;
             }
             else {
+                printf("2nd Else statement\n");
                 if (node == node->parent->left){
-                printf("Else If statement\n");
-                node = node->parent;
-                right_rotate(tree, node);
+                    printf("Ifff Right Rotate Soon\n");
+                    node = node->parent;
+                    right_rotate(tree, node);
                 }
+                printf("Left Rotate Soon\n");
                 node->parent->colour = BLACK;
                 node->parent->parent->colour = RED;
+                printf("Tik tok\n");
                 left_rotate(tree, node->parent->parent);
+                printf("Fail blog\n");
             }
         }
     } // end while
     tree->root->colour = BLACK;
     printf("Done\n");
-    tree->in_order_traversal(tree, print_int);
+    // tree->in_order_traversal(tree, print_int);
 }
 int main(void)
 {
@@ -316,6 +339,7 @@ int main(void)
     rbt_insert(tree, integer(6));
     (tree->root->colour == RED) ? (printf("Red Node\n")) : (printf("Black Node\n"));
     tree->in_order_traversal(tree, print_int);
+    printf("Heree\n");
     printf("Tree address: %p\n", tree);
     printf("Root: %p\n", tree->root);
     print_int(tree->root->data);
