@@ -26,6 +26,10 @@ void error_set_to_null_message(char* noun)
 static void in_order_traversal(rbt_t* tree, void action(void* data));
 static void post_order_traversal(rbt_t* tree, void action(void* data));
 static void destroy_rbt(rbt_t* tree, void free_data(void* data));
+static void rbt_insert(rbt_t* tree, void* data);
+static void* rbt_get_min(rbt_t* tree);
+static void* rbt_get_max(rbt_t* tree);
+static void* rbt_in(rbt_t* tree, void* key);
 void insert_fixup(rbt_t* tree, rbt_node_t* node);
 
 rbt_t* create_rbt(int cmp_func(const void* a, const void* b))
@@ -38,11 +42,25 @@ rbt_t* create_rbt(int cmp_func(const void* a, const void* b))
     ret->cmp = cmp_func;
     ret->in_order_traversal = in_order_traversal;
     ret->post_order_traversal = post_order_traversal;
-
+    ret->insert = rbt_insert;
     ret->destroy = destroy_rbt;
+    ret->min = rbt_get_min;
+    ret->max = rbt_get_max;
+    ret->in = rbt_in;
     return ret;
 }
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: create_rbt_node
+ *
+ * Arguments: data node is to contain
+ *            colour (RED or BLACK) of node
+ *
+ * Returns: pointer to the red black tree node
+ *
+ * Dependency: utils.h
+ */
 rbt_node_t* create_rbt_node(void* data, unsigned int colour)
 {
     if (data == NULL){
@@ -64,12 +82,24 @@ rbt_node_t* create_rbt_node(void* data, unsigned int colour)
     ret->parent = NIL;
     return ret;
 }
+//-----------------------------------------------------------------------------
 
 
-
-void rbt_insert(rbt_t* tree, void* data)
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: rbt_insert
+ *
+ * Arguments: red black tree
+ *            data to insert into tree
+ *
+ * Returns: Void (inserts data into tree)
+ *
+ * Dependency: utils.h
+ *             create_rbt_node
+ *             insert_fixup
+ */
+static void rbt_insert(rbt_t* tree, void* data)
 {
-    printf("Inserting: %d\n", *((int*)data));
     /* Error Checks */
     if(tree == NULL){
         error_set_to_null_message("tree");
@@ -78,13 +108,14 @@ void rbt_insert(rbt_t* tree, void* data)
         error_set_to_null_message("data");
     }
 
-    rbt_node_t* inserting_node = create_rbt_node(data, RED);
+    rbt_node_t* inserting_node = create_rbt_node(data, RED); // Insert this
     /* First insertion into tree, colour black */
     if(tree->root == NIL){
         inserting_node->colour = BLACK;
         tree->root = inserting_node;
         return;
     }
+
     rbt_node_t* prev = NIL;        // parent of curr
     rbt_node_t* curr = tree->root;
     int result;                     // result of comparison
@@ -111,13 +142,10 @@ void rbt_insert(rbt_t* tree, void* data)
     inserting_node->parent = prev;
     if (result > 0){
         prev->left = inserting_node;
-        
     }
     else{
         prev->right = inserting_node;
     }
-    /* TODO Balance RBT */
-    printf("About to fix-up: %d, whose parent is: %d\n", *((int*)inserting_node->data), *((int*)inserting_node->parent->data));
     insert_fixup(tree, inserting_node);
 }
 //-----------------------------------------------------------------------------
@@ -214,27 +242,145 @@ static void destroy_rbt(rbt_t* tree, void free_data(void* data))
 }
 //-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: rbt_get_min
+ *
+ * Arguments: The red black tree;
+ *
+ * Returns: data of minimum node
+ *
+ * Dependency: utils.h
+ */
+static void* rbt_get_min(rbt_t* tree)
+{
+    if (tree == NULL){
+        error_set_to_null_message("tree");
+    }
+    rbt_node_t* node = tree->root;
+    while(node->left != NIL){
+        node = node->left;
+    }
+    return node->data;
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: rbt_get_max
+ *
+ * Arguments: The red black tree;
+ *
+ * Returns: data of maximum node
+ *
+ * Dependency: utils.h
+ */
+static void* rbt_get_max(rbt_t* tree)
+{
+    if (tree == NULL){
+        error_set_to_null_message("tree");
+    }
+    rbt_node_t* node = tree->root;
+    while(node->right != NIL){
+        node = node->right;
+    }
+    return node->data;
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: rbt_in
+ *
+ * Arguments: The red black tree;
+ *            key in data for comparison
+ *
+ * Returns: data of node if found, otherwise NULL
+ *
+ * Dependency: utils.h
+ * 
+ * NOTE function only works when the key is the same type as the data inserted
+ */
+static void* rbt_in(rbt_t* tree, void* key)
+{
+    /* Error Checks */
+    if(tree == NULL){
+        error_set_to_null_message("tree");
+    }
+    if (key == NULL){
+        error_set_to_null_message("data");
+    }
+
+    rbt_node_t* node = tree->root;
+    int result;
+    while(node != NIL){
+        result = tree->cmp(node->data, key);
+        if(result == 0){
+            return node->data;
+        }
+        else if (result>0){
+            node = node->left;
+        }
+        else{
+            node = node->right;
+        }
+    }
+    return NULL;
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: left_rotate
+ *
+ * Arguments: The red black tree;
+              a red black tree node
+ *
+ * Returns: void
+ *           takes a node, and rotates itself to the left, and the node to the
+ *           right of it to its parent.
+ * 
+ * Dependency: None
+ */
 void left_rotate(rbt_t* tree, rbt_node_t* x)
 {
     rbt_node_t* y = x->right;
     x->right = y->left;
+    /* If left of y is not NIL, then its parent is now x */
     if(y->left != NIL){
         y->left->parent = x;
     }
     y->parent = x->parent;
+    /* If X is the root, then we left-rotate by making y the root */
     if (x->parent == NIL){
         tree->root = y;
     }
+    /* X's parent now points to y */
     else if (x == x->parent->left){
         x->parent->left = y;
     }
+    /* X's parent now points to y */
     else{
         x->parent->right = y;
     }
-    y->left = x;
-    x->parent = y;
+    y->left = x;    // left of y is now pointing to x (after rotation)
+    x->parent = y;  // x's parent is now y (after rotation)
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: right_rotate
+ *
+ * Arguments: The red black tree;
+              a red black tree node
+ *
+ * Returns: void
+ *           takes a node, and rotates to the right, and the node to the left
+ *           of it to its parent.
+ * 
+ * Dependency: None
+ */
 void right_rotate(rbt_t* tree, rbt_node_t* y)
 {
     rbt_node_t* x = y->left;
@@ -255,94 +401,75 @@ void right_rotate(rbt_t* tree, rbt_node_t* y)
     x->right = y;
     y->parent = x;
 }
+//-----------------------------------------------------------------------------
 
 void insert_fixup(rbt_t* tree, rbt_node_t* node)
 {
-    (node->parent->colour == RED) ? (printf("Colour of parent node is Red\n")) : printf("Colour of parent node is Black\n");
     while(node->parent->colour == RED){
         if(node->parent == node->parent->parent->left){
-            printf("If statement\n");
-            printf("Node: "); print_int(node->data);
-            printf("Parent: "); print_int(node->parent->data);
-            printf("Parents parent: "); print_int(node->parent->parent->data);
             rbt_node_t* y = node->parent->parent->right;
-            printf("Upeeee: %p\n", y);
-            printf("%d\n", y->colour);
+            /* if right of our parents parent is red (1 level above) */
             if(y->colour == RED){
-                printf("2nd If statement\n");
-                node->parent->colour = BLACK;
-                y->colour = BLACK;
-                node->parent->parent->colour = RED;
-                node = node->parent->parent;
+                node->parent->colour = BLACK;       // Parent set to black
+                y->colour = BLACK;                  // Right of our parents parents set to black
+                node->parent->parent->colour = RED; // Parents parent set to red
+                node = node->parent->parent;        // Inserted node now pointing to parents parent
             }
+            /* Right of our parents parent is black (1 level above) */
             else {
-                printf("Else statement\n");
+                /* Node is to the right of our parent */
                 if (node == node->parent->right){
-                    printf("Ifff Left Rotate Soon\n");
-                    node = node->parent;
+                    node = node->parent;            // Inserted node now pointing to parent
                     left_rotate(tree, node);
                 }
-                printf("Right Rotate Soon\n");
-                node->parent->colour = BLACK;
-                node->parent->parent->colour = RED;
-                printf("Tik tok\n");
+                /* Node is to the left of our parent */
+                node->parent->colour = BLACK;       // Parent set to black
+                node->parent->parent->colour = RED; // Parents parent set to red
                 right_rotate(tree, node->parent->parent);
-                printf("Fail blog\n");
             }
         }
         else{ // parent is to the right of its parent
-            printf("Else statement\n");;
-            printf("Node: "); print_int(node->data);
-            printf("Parent: "); print_int(node->parent->data);
-            printf("Parents parent: "); print_int(node->parent->parent->data);
             rbt_node_t* y = node->parent->parent->left;
-            printf("Heree: %p\n", y);
-            printf("%d\n", y->colour);
             if(y->colour == RED){
-                printf("If statement\n");
                 node->parent->colour = BLACK;
                 y->colour = BLACK;
                 node->parent->parent->colour = RED;
                 node = node->parent->parent;
             }
             else {
-                printf("2nd Else statement\n");
                 if (node == node->parent->left){
-                    printf("Ifff Right Rotate Soon\n");
                     node = node->parent;
                     right_rotate(tree, node);
                 }
-                printf("Left Rotate Soon\n");
                 node->parent->colour = BLACK;
                 node->parent->parent->colour = RED;
-                printf("Tik tok\n");
                 left_rotate(tree, node->parent->parent);
-                printf("Fail blog\n");
             }
         }
     } // end while
     tree->root->colour = BLACK;
-    printf("Done\n");
-    // tree->in_order_traversal(tree, print_int);
 }
+
 int main(void)
 {
     rbt_t* tree = create_rbt(int_cmp);
     rbt_node_t* node = create_rbt_node(integer(10), RED);
     (node->colour == RED) ? (printf("Red Node\n")) : (printf("Black Node\n"));
     printf("Size of Tree: %d\n", sizeof *tree);
-    rbt_insert(tree, integer(10));
-    rbt_insert(tree, integer(11));
-    rbt_insert(tree, integer(12));
-    rbt_insert(tree, integer(5));
-    rbt_insert(tree, integer(1));
-    rbt_insert(tree, integer(6));
+    tree->insert(tree, integer(10));
+    tree->insert(tree, integer(11));
+    tree->insert(tree, integer(12));
+    tree->insert(tree, integer(5));
+    tree->insert(tree, integer(1));
+    tree->insert(tree, integer(6));
     (tree->root->colour == RED) ? (printf("Red Node\n")) : (printf("Black Node\n"));
     tree->in_order_traversal(tree, print_int);
     printf("Heree\n");
     printf("Tree address: %p\n", tree);
     printf("Root: %p\n", tree->root);
     print_int(tree->root->data);
+    printf("Tree ranges from: %d to %d\n", *((int*)tree->min(tree)), *((int*)tree->max(tree)));
+    printf("Found: %d\n", *((int*)tree->in(tree, integer(10))));
     tree->destroy(tree, free);
     (tree->root->colour == RED) ? (printf("Red Node\n")) : (printf("Black Node\n"));
     print_int(tree->root->data);

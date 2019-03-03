@@ -26,15 +26,18 @@ struct rbt_node{
 struct rbt{
     rbt_node_t* root;
 
-    int(*cmp)(const void*, const void*);
-    void(*in_order_traversal)(rbt_t* tree, void action(void* data));
-    void(*post_order_traversal)(rbt_t* tree, void action(void* data));
+    int  (*cmp)(const void*, const void*);
+    void  (*in_order_traversal)(rbt_t* tree, void action(void* data));
+    void  (*post_order_traversal)(rbt_t* tree, void action(void* data));
 
-    void(*destroy)(rbt_t* tree, void free_data(void* data));
+    void  (*insert)(rbt_t* tree, void* data);
+    void* (*in)(rbt_t* tree, void* key);
+    void* (*min)(rbt_t* tree);
+    void* (*max)(rbt_t* tree);
+    void  (*destroy)(rbt_t* tree, void free_data(void* data));
 };
 
 rbt_t* create_rbt(int cmp_func(const void*, const void*));
-void rbt_insert(rbt_t* tree, void* data);
 void error_message(char* msg);
 
 
