@@ -30,6 +30,7 @@ static void rbt_insert(rbt_t* tree, void* data);
 static void* rbt_get_min(rbt_t* tree);
 static void* rbt_get_max(rbt_t* tree);
 static void* rbt_in(rbt_t* tree, void* key);
+static int rbt_len(rbt_t* tree);
 void insert_fixup(rbt_t* tree, rbt_node_t* node);
 
 rbt_t* create_rbt(int cmp_func(const void* a, const void* b))
@@ -47,6 +48,7 @@ rbt_t* create_rbt(int cmp_func(const void* a, const void* b))
     ret->min = rbt_get_min;
     ret->max = rbt_get_max;
     ret->in = rbt_in;
+    ret->len = rbt_len;
     return ret;
 }
 
@@ -331,6 +333,36 @@ static void* rbt_in(rbt_t* tree, void* key)
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
+ * Function: rbt_len
+ *
+ * Arguments: The red black tree;
+ *
+ * Returns: number of nodes in tree
+ *
+ * Dependency: utils.h
+ *             len_rbt
+ */
+static int len_rbt(rbt_node_t* parent)
+{
+    if (parent == NIL){
+        return 0;
+    }
+    return(len_rbt(parent->left) + 1 + len_rbt(parent->right));
+}
+
+static int rbt_len(rbt_t* tree)
+{
+    if(tree == NULL){
+        error_set_to_null_message("tree");
+    }
+    return len_rbt(tree->root);
+}
+//-----------------------------------------------------------------------------
+
+
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
  * Function: left_rotate
  *
  * Arguments: The red black tree;
@@ -470,6 +502,7 @@ int main(void)
     print_int(tree->root->data);
     printf("Tree ranges from: %d to %d\n", *((int*)tree->min(tree)), *((int*)tree->max(tree)));
     printf("Found: %d\n", *((int*)tree->in(tree, integer(10))));
+    printf("Length of Tree: %d\n", tree->len(tree));
     tree->destroy(tree, free);
     (tree->root->colour == RED) ? (printf("Red Node\n")) : (printf("Black Node\n"));
     print_int(tree->root->data);
