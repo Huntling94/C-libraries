@@ -377,3 +377,19 @@ void scalar_swap(void* a, void* b, size_t bytes){
     memcpy(b, temp, bytes);
     free(temp);
 }
+
+
+void error_message(char* msg)
+{
+    assert(msg != NULL);
+    fprintf(stderr, "Error: %s\n", msg);
+    exit(EXIT_FAILURE);
+}
+
+void error_set_to_null_message(char* noun)
+{
+    assert(noun != NULL);
+    fprintf(stderr, "Error: %s set to NULL (uninitialised). "
+                    "Please pass initialised %s into function\n", noun, noun);
+    exit(EXIT_FAILURE);
+}

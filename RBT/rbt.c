@@ -8,21 +8,6 @@ static rbt_node_t nil = {0, BLACK, UNVISITED, 0, 0, 0, 0};
 
 #define NIL &nil
 
-void error_message(char* msg)
-{
-    assert(msg != NULL);
-    fprintf(stderr, "Error: %s\n", msg);
-    exit(EXIT_FAILURE);
-}
-
-void error_set_to_null_message(char* noun)
-{
-    assert(noun != NULL);
-    fprintf(stderr, "Error: %s set to NULL (uninitialised). "
-                    "Please pass initialised %s into function\n", noun, noun);
-    exit(EXIT_FAILURE);
-}
-
 static void in_order_traversal(rbt_t* tree, void action(void* data));
 static void post_order_traversal(rbt_t* tree, void action(void* data));
 static void destroy_rbt(rbt_t* tree, void free_data(void* data));

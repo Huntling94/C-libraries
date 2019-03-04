@@ -47,4 +47,7 @@ void* copy_string(char* s);
 int unwanted_null(void* test);
 int free_string_array(char** A, int n);
 void scalar_swap(void* a, void* b, size_t bytes);
+
+void error_message(char* msg);
+void error_set_to_null_message(char* noun);
 #endif // UTILS_H

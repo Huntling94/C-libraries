@@ -40,8 +40,5 @@ struct rbt{
 };
 
 rbt_t* create_rbt(int cmp_func(const void*, const void*));
-void error_message(char* msg);
-
-
 
 #endif //RBT_H
