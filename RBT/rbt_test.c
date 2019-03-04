@@ -32,11 +32,11 @@ int main(void)
     t->destroy(t, free);
 
     printf("The above printing should print the integers in order. If it does "
-           "then BST of Integers success.\n");
+           "then RBT of Integers success.\n");
 
     SEPARATOR;
 
-    printf("Testing BST of Doubles\n");
+    printf("Testing RBT of Doubles\n");
     t = create_rbt(double_cmp);
     length = rand()%MAX_TESTING_ELEMENTS+1;
     for(i=0; i<length; i++){
@@ -55,11 +55,11 @@ int main(void)
     t->destroy(t, free);
 
     printf("The above printing should print the doubles in order. If it does "
-           "then BST of Doubles success.\n");
+           "then RBT of Doubles success.\n");
 
     SEPARATOR;
 
-    printf("Testing BST of Strings\n");
+    printf("Testing RBT of Strings\n");
     create_rbt(str_cmp);
     int num_strings = rand()%MAX_TESTING_ELEMENTS;
     for(i=0; i<num_strings; i++){
@@ -82,11 +82,11 @@ int main(void)
     t->destroy(t, free);
 
     printf("The above printing should print the strings in order. If it does "
-           "then BST of Strings success.\n");
+           "then RBT of Strings success.\n");
 
     SEPARATOR;
 
-    printf("Testing BST of Chars\n");
+    printf("Testing RBT of Chars\n");
     t = create_rbt(char_cmp);
     length = rand()%MAX_TESTING_ELEMENTS+1;
     for(i=0; i<length; i++){
@@ -102,7 +102,7 @@ int main(void)
     t->destroy(t, free);
 
     printf("The above printing should print the strings in order. If it does "
-           "then BST of Chars success.\n");
+           "then RBT of Chars success.\n");
 
     SEPARATOR;
 
