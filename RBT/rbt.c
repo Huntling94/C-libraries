@@ -32,6 +32,7 @@ static void* rbt_get_max(rbt_t* tree);
 static void* rbt_in(rbt_t* tree, void* key);
 static int rbt_len(rbt_t* tree);
 void insert_fixup(rbt_t* tree, rbt_node_t* node);
+static void rbt_print(rbt_t* tree, void print(void* data));
 
 rbt_t* create_rbt(int cmp_func(const void* a, const void* b))
 {
@@ -49,6 +50,7 @@ rbt_t* create_rbt(int cmp_func(const void* a, const void* b))
     ret->max = rbt_get_max;
     ret->in = rbt_in;
     ret->len = rbt_len;
+    ret->print = rbt_print;
     return ret;
 }
 
@@ -213,6 +215,22 @@ static void node_action_all(rbt_node_t* node, void action(void* data))
 
         
     }
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: rbt_print
+ *
+ * Arguments: the red black tree
+ *            a function that prints data in a node
+ *
+ * Returns: void
+ *
+ */
+static void rbt_print(rbt_t* tree, void print(void* data))
+{
+     tree->in_order_traversal(tree, print);
 }
 //-----------------------------------------------------------------------------
 
@@ -480,32 +498,4 @@ void insert_fixup(rbt_t* tree, rbt_node_t* node)
         }
     } // end while
     tree->root->colour = BLACK;
-}
-
-int main(void)
-{
-    rbt_t* tree = create_rbt(int_cmp);
-    rbt_node_t* node = create_rbt_node(integer(10), RED);
-    (node->colour == RED) ? (printf("Red Node\n")) : (printf("Black Node\n"));
-    printf("Size of Tree: %d\n", sizeof *tree);
-    tree->insert(tree, integer(10));
-    tree->insert(tree, integer(11));
-    tree->insert(tree, integer(12));
-    tree->insert(tree, integer(5));
-    tree->insert(tree, integer(1));
-    tree->insert(tree, integer(6));
-    (tree->root->colour == RED) ? (printf("Red Node\n")) : (printf("Black Node\n"));
-    tree->in_order_traversal(tree, print_int);
-    printf("Heree\n");
-    printf("Tree address: %p\n", tree);
-    printf("Root: %p\n", tree->root);
-    print_int(tree->root->data);
-    printf("Tree ranges from: %d to %d\n", *((int*)tree->min(tree)), *((int*)tree->max(tree)));
-    printf("Found: %d\n", *((int*)tree->in(tree, integer(10))));
-    printf("Length of Tree: %d\n", tree->len(tree));
-    tree->destroy(tree, free);
-    (tree->root->colour == RED) ? (printf("Red Node\n")) : (printf("Black Node\n"));
-    print_int(tree->root->data);
-    printf("Root: %p\n", tree->root);
-    printf("Tree address: %p\n", tree);
 }

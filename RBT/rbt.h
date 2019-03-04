@@ -35,6 +35,7 @@ struct rbt{
     void* (*min)(rbt_t* tree);
     void* (*max)(rbt_t* tree);
     int   (*len)(rbt_t* tree);
+    void  (*print)(rbt_t* tree, void print(void* data));
     void  (*destroy)(rbt_t* tree, void free_data(void* data));
 };
 
