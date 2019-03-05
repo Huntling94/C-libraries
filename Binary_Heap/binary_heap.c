@@ -3,29 +3,27 @@
 #include "binary_heap.h"
 
 #define DEFAULT_ALLOC 10
+static void print_heap(binary_heap_t* h, void print(void*));
 
-static int binary_heap_is_empty(binary_heap_t* h);
-binary_heap_t* create_binary_heap(int n, int cmp(const void*, const void*))
-{
-    if(n <= 0){
-        n = DEFAULT_ALLOC;
-    }
+/*****************************************************************************/
+/****************** Private Helper Functions for Binary Heap *****************/
+/*****************************************************************************/
+static unsigned int parent(unsigned int i);
+static unsigned int left(unsigned int i);
+static unsigned int right(unsigned int i);
+static void max_heapify(binary_heap_t* h, unsigned int p);
+static void build_max_heap(binary_heap_t* h);
 
-
-    binary_heap_t* heap = malloc(sizeof *heap);
-    heap->len = 0;
-    heap->heap = malloc(n * sizeof(*heap->heap));
-    assert(unwanted_null(heap->heap));
-    heap->alloc = n;
-
-    assert(unwanted_null(heap));
-
-    heap->cmp = cmp;
-    heap->is_empty = binary_heap_is_empty;
-    
-    return heap;
-}
-
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Functions: parent, left, right
+ *
+ * Arguments: index of a node
+ *
+ * Returns: index of the nodes parent, left, or right's index respectively
+ * 
+ * Dependency: None
+ */
 static unsigned int parent(unsigned int i){
     return i/2;
 }
@@ -37,35 +35,22 @@ static unsigned int left(unsigned int i){
 static unsigned int right(unsigned int i){
     return i*2 + 2;
 }
+//-----------------------------------------------------------------------------
 
-static void print_heap(binary_heap_t* h, void print(void*))
-{
-    unsigned int i;
-    for(i=0; i<h->len; i++){
-        printf("%d: ", i); print_int(h->heap[i]);
-    }
-    printf("Done\n");
-}
-
-binary_heap_t* array_to_binary_heap(int* A, int n, int cmp(const void*, const void*))
-{
-    binary_heap_t* heap = malloc(sizeof *heap);
-    assert(unwanted_null(heap));
-    
-    heap->len = n;
-    heap->alloc = n;
-    heap->heap = malloc(n * sizeof(*heap->heap));
-    assert(unwanted_null(heap->heap));
-
-    int i;
-    for(i=0; i<n; i++){
-        heap->heap[i] = integer(A[i]);
-    }
-    heap->cmp = cmp;
-    heap->is_empty = binary_heap_is_empty;
-    return heap;
-}
-
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Functions: max_heapify
+ *
+ * Arguments: binary_heap
+ *            index of parent
+ *
+ * Returns: Void.
+ *           Swaps maximum of {parent, left, right} into parent index.
+ *           If highest is parent, terminates, otherwise recursively calls
+ *           until highest is parent (guaranteed if both leaves don't exist)
+ * 
+ * Dependency: utils.h
+ */
 static void max_heapify(binary_heap_t* h, unsigned int p)
 {
     unsigned int l = left(p);
@@ -86,6 +71,18 @@ static void max_heapify(binary_heap_t* h, unsigned int p)
         max_heapify(h, largest);
     }
 }
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: build_max_heap
+ *
+ * Arguments: heap
+ *
+ * Returns: Void (converts current heap into a max heap)
+ * 
+ * Dependency: max_heapify
+ */
 static void build_max_heap(binary_heap_t* h)
 {
     unsigned int i;
@@ -94,27 +91,122 @@ static void build_max_heap(binary_heap_t* h)
     }
     max_heapify(h, 0);
 }
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/****************** Public Helper Functions for Binary Heap ******************/
+/*****************************************************************************/
+binary_heap_t* create_binary_heap(int n, int cmp(const void*, const void*));
+binary_heap_t* array_to_binary_heap(int* A, int n, int cmp(const void*, const void*));
+
+static void binary_heap_push(binary_heap_t* h, void* data);
+static void* binary_heap_pop(binary_heap_t* h);
+static int binary_heap_is_empty(binary_heap_t* h);
+
+/*****************************************************************************/
+/******************* Constructor Functions for Binary Heap *******************/
+/*****************************************************************************/
 
 
-
-static void binary_heap_push(binary_heap_t* h, void* data)
+binary_heap_t* create_binary_heap(int n, int cmp(const void*, const void*))
 {
-    if(h == NULL){
-        error_set_to_null_message("binary_heap");
+    if(n <= 0){
+        n = DEFAULT_ALLOC;
     }
-    h->heap[h->len++] = data;
-    print_heap(h, print_int);
-    build_max_heap(h);
-    print_heap(h, print_int);
-}
 
+    binary_heap_t* heap = malloc(sizeof *heap);
+    assert(unwanted_null(heap));
+    heap->len = 0;
+    heap->heap = malloc(n * sizeof(*heap->heap));
+    assert(unwanted_null(heap->heap));
+    heap->alloc = n;
+
+    heap->cmp = cmp;
+    heap->is_empty = binary_heap_is_empty;
+    
+    return heap;
+}
+//--------------------------------------------------------------------------
+
+binary_heap_t* array_to_binary_heap(int* A, int n, int cmp(const void*, const void*))
+{
+    binary_heap_t* heap = malloc(sizeof *heap);
+    assert(unwanted_null(heap));
+    heap->len = n;
+    heap->alloc = n;
+    heap->heap = malloc(n * sizeof(*heap->heap));
+    assert(unwanted_null(heap->heap));
+
+    int i;
+    for(i=0; i<n; i++){
+        heap->heap[i] = integer(A[i]);
+    }
+    heap->cmp = cmp;
+    heap->is_empty = binary_heap_is_empty;
+    return heap;
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/********************* Operation Functions on Binary Heap ********************/
+/*****************************************************************************/
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: binary_heap_is_empty
+ *
+ * Arguments: binary_heap
+ *
+ * Returns: 1 if empty, 0 otherwise
+ * 
+ * Dependency: utils.h
+ */
 static int binary_heap_is_empty(binary_heap_t* h){
     if(h == NULL){
         error_set_to_null_message("binary_heap");
     }
     return h->len == 0;
 }
+//-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: binary_heap_push
+ *
+ * Arguments: binary_heap
+ *            data to be pushed on
+ *
+ * Returns: Void. Pushes data onto heap.
+ * 
+ * Dependency: utils.h
+ *             build_max_heap
+ */
+static void binary_heap_push(binary_heap_t* h, void* data)
+{
+    if(h == NULL){
+        error_set_to_null_message("binary_heap");
+    }
+    if (data == NULL){
+        error_set_to_null_message("data");
+    }
+    h->heap[h->len++] = data;
+    print_heap(h, print_int);
+    build_max_heap(h);
+    print_heap(h, print_int);
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: binary_heap_pop
+ *
+ * Arguments: binary_heap
+ *
+ * Returns: maximum element of heap (0th index)
+ * 
+ * Dependency: utils.h
+ *             build_max_heap
+ */
 static void* binary_heap_pop(binary_heap_t* h)
 {
     if(h == NULL){
@@ -131,7 +223,17 @@ static void* binary_heap_pop(binary_heap_t* h)
     h->len--;
     build_max_heap(h);
     return ret;
-    
+}
+//-----------------------------------------------------------------------------
+
+
+static void print_heap(binary_heap_t* h, void print(void*))
+{
+    unsigned int i;
+    for(i=0; i<h->len; i++){
+        printf("%d: ", i); print_int(h->heap[i]);
+    }
+    printf("Done\n");
 }
 
 int main(void)
