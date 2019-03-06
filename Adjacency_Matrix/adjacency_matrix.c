@@ -3,10 +3,12 @@
 #include <string.h>
 #include <assert.h>
 #include "..\BST\bst.h"
+#include "..\RBT\rbt.h"
 #include "..\Queue\queue.h"
 #include "..\Stack\stack.h"
 #include "..\Math_Extended\math_extended.h"
 #include "..\Matrix\matrix.h"
+#include "..\Utilities\utils.h"
 
 #define FILE_NAME "locations.txt"
 
@@ -19,7 +21,7 @@ typedef struct v_info v_info_t;
 typedef char** buff_t;
 
 v_info_t* create_data(char* name, int index);
-void create_empty_adj_matrix(adj_matrix_t* m, int directed_or_undirected);
+adj_matrix_t* create_empty_adj_matrix(int directed_or_undirected);
 
 void free_v_info(void* data);
 
@@ -35,7 +37,7 @@ struct v_info{
 struct adj_matrix{
     int num_vertices;
     int alloc_vertices;
-    tree_t* vertices;
+    rbt_t* vertices;
 
     int is_directed_graph;
     matrix_t* matrix;
@@ -143,9 +145,10 @@ void free_v_info(void* data){
 /**----------------------------------------------------------------------------
  * Function: create_empty_adj_matrix
  *
- * Arguments: the adjacency matrix
+ * Arguments: number of vertices in graph
+ *            whether graph is directed or undirected
  *
- * Returns: void
+ * Returns: An initialised (empty) adjacency matrix
  *
  * Dependency: bst.h
  */
@@ -160,14 +163,24 @@ static int is_eulerian(adj_matrix_t* m);
 static int is_undirected(adj_matrix_t* m);
 static int trace(adj_matrix_t* m);
 
-void create_empty_adj_matrix(adj_matrix_t* m, int directed_or_undirected){
+adj_matrix_t* create_empty_adj_matrix(int num_nodes, int directed_or_undirected){
+    if (nodes <= 0){
+        error_message("Please initialise matrix with a positive number of nodes");
+    }
+    if (directed_or_undirected != DIRECTED || directed_or_undirected != UNDIRECTED){
+        error_message("Please specify if graph is DIRECTED or UNDIRECTED");
+    }
+    adj_matrix_t* m = malloc(sizeof *m);
+    assert(unwanted_null(m));
+
     m->num_vertices = 0;
-    m->alloc_vertices = INIT_ALLOC;
+    m->alloc_vertices = num_nodes;
     m->vertices = malloc(sizeof(*m->vertices));
+    assert(unwanted_null(m->vertices));
 
     m->is_directed_graph = directed_or_undirected;
-    create_tree(m->vertices, v_info_cmp);
-    m->matrix = create_matrix(60, 60);
+    m->vertices = create_rbt(v_info_cmp);
+    m->matrix = create_matrix(num_nodes, num_nodes);
 
 
     m->index = &find_v_index;
@@ -194,14 +207,22 @@ void create_empty_adj_matrix(adj_matrix_t* m, int directed_or_undirected){
  *
  * Returns: pointer to the v_info_t instance created
  *
- * Dependency: bst.h
+ * Dependency: utils.h
  */
 v_info_t* create_data(char* v_name, int index){
+    if (v_name == NULL){
+        error_set_to_null_message("v_name");
+    }
+    if (index < 0){
+        error_message("Index must be non-negative");
+    }
     v_info_t* r = malloc(sizeof(*r));
-    assert(r != NULL);
-    r->index = index;
+    assert(unwanted_null(r));
+
     r->name = malloc(sizeof(*r->name) * (strlen(v_name) + 1));
-    assert(r->name != NULL);
+    assert(unwanted_null(r->name));
+
+    r->index = index;
     strcpy(r->name, v_name);
     return r;
 }
@@ -219,6 +240,12 @@ v_info_t* create_data(char* v_name, int index){
  * Dependency: bst.h
  */
 static int find_v_index(adj_matrix_t* m, char* v_name){
+    if (v_name == NULL){
+        error_set_to_null_message("v_name");
+    }
+    if (m == NULL){
+        error_set_to_null_message("adjacency_matrix");
+    }
     node_t* found = m->vertices->find(m->vertices, v_name, key_cmp);
     if (found == NULL){
         return -1;
