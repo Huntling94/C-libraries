@@ -226,6 +226,30 @@ static void* binary_heap_pop(binary_heap_t* h)
 }
 //-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: binary_heap_destroy
+ *
+ * Arguments: binary_heap
+ *
+ * Returns: Void (destroys binary heap)
+ * 
+ * Dependency: utils.h
+ *             binary_heap_is_empty
+ */
+static void binary_heap_destroy(binary_heap_t* h)
+{
+    if(h == NULL){
+        error_set_to_null_message("binary_heap");
+    }
+    int i;
+    while(!h->is_empty(h)){
+        free(h->heap[--h->len]);
+    }
+    free(h->heap);
+    free(h);
+}
+//-----------------------------------------------------------------------------
 
 static void print_heap(binary_heap_t* h, void print(void*))
 {
@@ -266,7 +290,8 @@ int main(void)
         item = binary_heap_pop(test);
         print_int(item);
     }
-    printf("Done\n");
     print_heap(test, print_int);
+    binary_heap_destroy(test);
+    printf("Destroyed\n");
 }
 
