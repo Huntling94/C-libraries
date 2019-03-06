@@ -99,6 +99,8 @@ int main(void)
         fprintf(stderr, "Failure size of tree larger than num elements inserted\n");
         exit(EXIT_FAILURE);
     }
+    printf("Frequency of b: %d\n", t->get_frequency(t, "b"));
+    printf("Colour of b: "); (t->get_colour == RED) ? (printf("Red\n")) : (printf("Black\n"));
     t->destroy(t, free);
 
     printf("The above printing should print the strings in order. If it does "

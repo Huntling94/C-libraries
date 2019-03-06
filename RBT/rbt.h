@@ -34,6 +34,8 @@ struct rbt{
     void* (*in)(rbt_t* tree, void* key);
     void* (*min)(rbt_t* tree);
     void* (*max)(rbt_t* tree);
+    int   (*get_frequency)(rbt_t* tree, void* key);
+    int   (*get_colour)(rbt_t* tree, void* key);
     int   (*len)(rbt_t* tree);
     void  (*print)(rbt_t* tree, void print(void* data));
     void  (*destroy)(rbt_t* tree, void free_data(void* data));

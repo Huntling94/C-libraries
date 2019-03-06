@@ -14,6 +14,8 @@ static void destroy_rbt(rbt_t* tree, void free_data(void* data));
 static void rbt_insert(rbt_t* tree, void* data);
 static void* rbt_get_min(rbt_t* tree);
 static void* rbt_get_max(rbt_t* tree);
+static int rbt_get_frequency(rbt_t* tree, void* key);
+static int rbt_get_colour(rbt_t* tree, void* key);
 static void* rbt_in(rbt_t* tree, void* key);
 static int rbt_len(rbt_t* tree);
 void insert_fixup(rbt_t* tree, rbt_node_t* node);
@@ -33,6 +35,8 @@ rbt_t* create_rbt(int cmp_func(const void* a, const void* b))
     ret->destroy = destroy_rbt;
     ret->min = rbt_get_min;
     ret->max = rbt_get_max;
+    ret->get_colour = rbt_get_colour;
+    ret->get_frequency = rbt_get_frequency;
     ret->in = rbt_in;
     ret->len = rbt_len;
     ret->print = rbt_print;
@@ -290,6 +294,102 @@ static void* rbt_get_max(rbt_t* tree)
         node = node->right;
     }
     return node->data;
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: rbt_find
+ *
+ * Arguments: The red black tree;
+ *            key in data for comparison
+ *
+ * Returns: the node in the tree if the key is present, or NULL otherwise
+ *
+ * Dependency: utils.h
+ * 
+ * NOTE function only works when the key is the same type as the data inserted
+ */
+static rbt_node_t* rbt_find(rbt_t* tree, void* key)
+{
+    rbt_node_t* node = tree->root;
+    int result;
+    while(node != NIL){
+        result = tree->cmp(node->data, key);
+        if(result == 0){
+            return node;
+        }
+        else if (result>0){
+            node = node->left;
+        }
+        else{
+            node = node->right;
+        }
+    }
+    return NULL;
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: rbt_get_colour
+ *
+ * Arguments: The red black tree;
+ *            key in data for comparison
+ *
+ * Returns: the colour of the node if the key is in the tree
+ *
+ * Dependency: utils.h
+ *             rbt_find
+ * 
+ * NOTE function only works when the key is the same type as the data inserted
+ */
+static int rbt_get_colour(rbt_t* tree, void* key)
+{
+    /* Error Checks */
+    if(tree == NULL){
+        error_set_to_null_message("tree");
+    }
+    if (key == NULL){
+        error_set_to_null_message("data");
+    }
+
+    rbt_node_t* node = rbt_find(tree, key);
+    if (node == NULL){
+        error_message("Key doesn't exist in tree\n");
+    }
+    return node->colour;
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: rbt_get_frequency
+ *
+ * Arguments: The red black tree;
+ *            key in data for comparison
+ *
+ * Returns: the frequency (# of attempts) the key has been inserted into tree
+ *
+ * Dependency: utils.h
+ *             rbt_find
+ * 
+ * NOTE function only works when the key is the same type as the data inserted
+ */
+static int rbt_get_frequency(rbt_t* tree, void* key)
+{
+    /* Error Checks */
+    if(tree == NULL){
+        error_set_to_null_message("tree");
+    }
+    if (key == NULL){
+        error_set_to_null_message("data");
+    }
+    rbt_node_t* node = rbt_find(tree, key);
+    if (node == NULL){
+        error_message("Key doesn't exist in tree\n");
+    }
+    return node->frequency;
 }
 //-----------------------------------------------------------------------------
 
