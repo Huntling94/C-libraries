@@ -119,7 +119,6 @@ static void linked_list_push(list_t* list, void* data)
  * Returns: data stored at the end of the list
  * 
  * Dependency: utils.h
- *             create_linked_list
  * 
  * Complexity: (O(1) — achieved by not updating end in all but start of list)
  */
@@ -185,6 +184,54 @@ static list_t* linked_list_prepend(list_t* list, void* data)
 }
 //-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: linked_list_dequeue
+ *
+ * Arguments: pointer to start of list
+ *
+ * Returns: data stored at the start of list (the list node passed in)
+ * 
+ * Dependency: utils.h
+ *             linked_list_pop
+ * 
+ * Complexity: (O(1))
+ */
+void* linked_list_dequeue(list_t* list)
+{
+    if (list == NULL){
+        error_set_to_null_message("linked_list");
+    }
+
+    /* Size of list is 1 */
+    if(list == list->end){
+        return linked_list_pop(list);
+    }
+    /* Size of list is 2 */
+    else if(list->next == list->end){
+        void* to_ret = list->data;
+        list_t* to_del = list->next;
+        
+        list->next = NULL;
+        list->end = list;
+        list->data = to_del->data;
+        free(to_del);
+        return to_ret;
+    }
+    /* Size of list greater than 2 */
+    else{
+        void* to_ret = list->data;
+        list_t* to_del = list->next;
+        assert(list->next->next != NULL); // Just in case
+        list->next = list->next->next;
+        list->next->prev = list;
+        list->data = to_del->data;
+        free(to_del);
+        return to_ret;
+    }
+}
+//-----------------------------------------------------------------------------
+
 int main(void)
 {
     list_t* list = create_linked_list(integer(5));
@@ -215,9 +262,12 @@ int main(void)
     linked_list_push(list, integer(6));
     linked_list_push(list, integer(7));
     list = linked_list_prepend(list, integer(1000));
-    print_int(linked_list_pop(list));
-    print_int(linked_list_pop(list));
-    print_int(linked_list_pop(list));
+    print_int(linked_list_dequeue(list));
+    print_int(linked_list_dequeue(list));
+    print_int(linked_list_dequeue(list));
+    //print_int(linked_list_pop(list));
+    //print_int(linked_list_pop(list));
+    //print_int(linked_list_pop(list));
     printf("List is empty: "); (linked_list_is_empty(list)) ? (printf("Yes\n")) : (printf("No\n"));
 }
 
