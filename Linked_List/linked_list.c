@@ -289,6 +289,7 @@ void linked_list_traverse_rl(list_t* list, void func(void*))
         end = end->prev;
     }
 }
+//-----------------------------------------------------------------------------
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
@@ -322,6 +323,53 @@ void* linked_list_find(list_t* list, void* desired_data,
     }
     return NULL;
 }
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: linked_list_find_all
+ *
+ * Arguments: pointer to start of list
+ *            key of desired data you want
+ *            pointer to integer which will store number of times key is found
+ *            comparison function that compares data with desired_data
+ *
+ * Returns: Pointer to *first instance of data* (left to right) if found, or NULL
+ *           Please note that your comparison function may not be commutative.
+ *           See find function for more details.
+ * 
+ * Dependency: utils.h
+ * 
+ * Complexity: (O(n))
+ */
+void** linked_list_find_all(list_t* list, void* desired_data, int* num_found,
+                            int cmp(const void* data, const void* desired))
+{
+    int alloc = 1;
+    *num_found = 0;
+
+    void** found = malloc(alloc * sizeof(*found));
+    assert(unwanted_null(found));
+    list_t* copy = list;
+
+    while(copy){
+        if (!cmp(copy->data, desired_data)){
+            if (alloc == *num_found){
+                alloc *= 2;
+                found = realloc(found, alloc * sizeof(*found));
+            }
+            found[*num_found] = copy->data;
+            (*num_found)++;
+        }
+        copy = copy->next;
+    }
+    if(*num_found == 0){
+        free(found);
+        return NULL;
+    }
+    return found;
+}
+//-----------------------------------------------------------------------------
 
 int main(void)
 {
@@ -357,6 +405,21 @@ int main(void)
     void* found = linked_list_find(list, integer(7), int_cmp);
     (found == NULL) ? (printf("Not Found\n")) : (printf("Found: %d\n", *((int*)found)));
 
+    linked_list_push(list, integer(6));
+    linked_list_push(list, integer(6));
+    linked_list_push(list, integer(6));
+    int num_found = 0;
+    void** found_six = linked_list_find_all(list, integer(6), &num_found, int_cmp);
+    printf("Total Found: %d\n", num_found);
+    printf("Pointer of found_six: %p\n", found_six);
+    int i;
+    for(i=0; i<num_found; i++){
+        printf("Found: "); print_int(found_six[i]);
+    }
+    free(found_six);
+    print_int(linked_list_dequeue(list));
+    print_int(linked_list_dequeue(list));
+    print_int(linked_list_dequeue(list));
     print_int(linked_list_dequeue(list));
     print_int(linked_list_dequeue(list));
     print_int(linked_list_dequeue(list));
