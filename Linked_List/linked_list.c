@@ -42,7 +42,7 @@ list_t* create_linked_list(void* data)
  * 
  * Dependency: utils.h
  */
-static int linked_list_is_empty(list_t* list)
+int linked_list_is_empty(list_t* list)
 {
     if (list == NULL){
         error_set_to_null_message("linked_list");
@@ -79,9 +79,9 @@ void pointer_next(list_t* list)
  * Dependency: utils.h
  *             create_linked_list
  * 
- * Complexity: (O(n)) -- can be improved to O(1) later
+ * Complexity: (O(1))
  */
-static void linked_list_push(list_t* list, void* data)
+void linked_list_push(list_t* list, void* data)
 {
     if (list == NULL){
         error_set_to_null_message("linked_list");
@@ -98,15 +98,9 @@ static void linked_list_push(list_t* list, void* data)
     list_t* new_node = create_linked_list(data);
     assert(unwanted_null(new_node));
     new_node->end = new_node;
-
-    while(list->next != NULL){
-        list->end = new_node;
-        list->next->prev = list;
-        list = list->next;
-    }
+    new_node->prev = list->end;
+    list->end->next = new_node;
     list->end = new_node;
-    list->next = new_node;
-    new_node->prev = list;
 }
 //-----------------------------------------------------------------------------
 
@@ -157,13 +151,14 @@ static void* linked_list_pop(list_t* list)
  *            data to be stored at new start of list
  *
  * Returns: the new start of the list with data added
+ *          (Will be fixed later to return void)
  * 
  * Dependency: utils.h
  *             create_linked_list
  * 
  * Complexity: (O(1))
  */
-static list_t* linked_list_prepend(list_t* list, void* data)
+list_t* linked_list_prepend(list_t* list, void* data)
 {
     if (list == NULL){
         error_set_to_null_message("linked_list");
