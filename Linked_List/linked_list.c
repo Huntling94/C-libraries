@@ -290,6 +290,39 @@ void linked_list_traverse_rl(list_t* list, void func(void*))
     }
 }
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: linked_list_find
+ *
+ * Arguments: pointer to start of list
+ *            key of desired data you want
+ *            comparison function that compares data with desired_data
+ *
+ * Returns: Pointer to *first instance of data* (left to right) if found, or NULL
+ *           Please note that your comparison function may not be commutative.
+ *           If the data you insert into the list is a struct, and you want to
+ *           find the first instance of data with a particular key (an element)
+ *           in that struct, then the cmp function is not commutative.
+ *           Hence, ensure, the left argument takes the lists data, and the right
+ *           the key you are searching for
+ * 
+ * Dependency: utils.h
+ * 
+ * Complexity: (O(n))
+ */
+void* linked_list_find(list_t* list, void* desired_data,
+                       int cmp(const void* data, const void* desired))
+{
+    list_t* copy = list;
+    while(copy){
+        if (!cmp(copy->data, desired_data)){
+            return copy->data;
+        }
+        copy = copy->next;
+    }
+    return NULL;
+}
+
 int main(void)
 {
     list_t* list = create_linked_list(integer(5));
@@ -320,6 +353,10 @@ int main(void)
     linked_list_push(list, integer(6));
     linked_list_push(list, integer(7));
     list = linked_list_prepend(list, integer(1000));
+    
+    void* found = linked_list_find(list, integer(7), int_cmp);
+    (found == NULL) ? (printf("Not Found\n")) : (printf("Found: %d\n", *((int*)found)));
+
     print_int(linked_list_dequeue(list));
     print_int(linked_list_dequeue(list));
     print_int(linked_list_dequeue(list));

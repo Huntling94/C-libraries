@@ -23,5 +23,8 @@ list_t* linked_list_prepend(list_t* list, void* data);
 void* linked_list_dequeue(list_t* list);
 void linked_list_traverse_lr(list_t* list, void func(void*));
 void linked_list_traverse_rl(list_t* list, void func(void*));
+void* linked_list_find(list_t* list, void* desired_data,
+                       int cmp(const void* data, const void* desired))
+
 
 #endif // LINKED_LIST_H
