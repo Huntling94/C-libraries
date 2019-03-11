@@ -21,5 +21,7 @@ void linked_list_push(list_t* list, void* data);
 void* linked_list_pop(list_t* list);
 list_t* linked_list_prepend(list_t* list, void* data);
 void* linked_list_dequeue(list_t* list);
+void linked_list_traverse_lr(list_t* list, void func(void*));
+void linked_list_traverse_rl(list_t* list, void func(void*));
 
 #endif // LINKED_LIST_H

@@ -116,7 +116,7 @@ void linked_list_push(list_t* list, void* data)
  * 
  * Complexity: (O(1) — achieved by not updating end in all but start of list)
  */
-static void* linked_list_pop(list_t* list)
+void* linked_list_pop(list_t* list)
 {
     if (list == NULL){
         error_set_to_null_message("linked_list");
@@ -227,17 +227,80 @@ void* linked_list_dequeue(list_t* list)
 }
 //-----------------------------------------------------------------------------
 
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: linked_list_traverse_lr
+ *
+ * Arguments: pointer to start of list
+ *            function that operates on each data in list
+ *
+ * Returns: Void
+ *           Applies the function, from the start of the list to the end,
+ *           left to right, at each data element.
+ * 
+ * Dependency: utils.h
+ * 
+ * Complexity: (O(n))
+ */
+void linked_list_traverse_lr(list_t* list, void func(void*))
+{
+    if (list == NULL){
+        error_set_to_null_message("linked_list");
+    }
+    if (linked_list_is_empty(list)){
+        return;
+    }
+    list_t* start = list;
+    while(start){
+        func(start->data);
+        start->end = list->end;
+        start = start->next;
+    }
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: linked_list_traverse_rl
+ *
+ * Arguments: pointer to start of list
+ *            function that operates on each data in list
+ *
+ * Returns: Void
+ *           Applies the function, from the end of the list to the start,
+ *           right to right, at each data element.
+ * 
+ * Dependency: utils.h
+ * 
+ * Complexity: (O(n))
+ */
+void linked_list_traverse_rl(list_t* list, void func(void*))
+{
+    if (list == NULL){
+        error_set_to_null_message("linked_list");
+    }
+    if (linked_list_is_empty(list)){
+        return;
+    }
+    list_t* end = list->end;
+    while(end){
+        func(end->data);
+        end->end = list->end;
+        end = end->prev;
+    }
+}
+
 int main(void)
 {
     list_t* list = create_linked_list(integer(5));
     linked_list_push(list, integer(6));
     linked_list_push(list, integer(7));
     list = linked_list_prepend(list, integer(1000));
-    list_t* view = list;
-    while(view){
-        print_int(view->data);
-        view = view->next;
-    }
+    
+    linked_list_traverse_lr(list, print_int);
+    printf("Traversed left to right\n");
+    linked_list_traverse_rl(list, print_int);
+    printf("Traversed right to left");
     pointer_prev(list->end);
     printf("Done\n");
     pointer_next(list);
