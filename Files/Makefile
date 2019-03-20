@@ -6,7 +6,7 @@ CFLAGS = -Wall
 
 # exe name and a list of object files that make up the program
 EXE    = test
-OBJ    = rbt_test.o rbt.o ../Utilities/utils.o
+OBJ    = files_test.o files.o ../Utilities/utils.o
 
 
 # RULES - these tell make when and how to recompile parts of the project
@@ -32,8 +32,8 @@ $(EXE): $(OBJ) # <-- the target is followed by a list of prerequisites
 
 
 # okay here's another rule, this time to help make create object files
-rbt_test.o: rbt.c rbt.h
-	$(CC) $(CFLAGS) -c rbt_test.c
+files_test.o: files.c files.h
+	$(CC) $(CFLAGS) -c files_test.c
 
 ../Utilities/utils.o: ../Utilities/utils.c ../Utilities/utils.h
 
