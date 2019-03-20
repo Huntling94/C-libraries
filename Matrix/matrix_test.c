@@ -64,6 +64,13 @@ int main(void){
         (0) ? SUCCESS_FAIL;
     }
 
+    if (errno == 0){
+        printf("All tests successful\n");
+    }
+    else{
+        printf("Error raised: %s\n", strerror(errno));
+    }
+
 
     
     /* matrix_t* iris_matrix = csv_to_matrix(IRIS_DATASET, ",", lines_in_file(IRIS_DATASET), NULL, 1, 0); */
