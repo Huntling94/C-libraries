@@ -1,4 +1,2 @@
-To run stack_test compile as follows:
-
-GCC:
-gcc -o stack_test stack_test.c stack.c ..\Utilities\utils.c
+To test type: make
+to clean type: make clean
