@@ -369,7 +369,7 @@ void print(tree_t* tree, void print(void* data))
  * Note that the free function from stdlib.h can be passed in for suitable data
  */
 
-static void recursive_destroy(node_t* node, void free_data(void* data)
+static void recursive_destroy(node_t* node, void free_data(void* data))
 {
     if(node){
         recursive_destroy(node->left, free_data);
