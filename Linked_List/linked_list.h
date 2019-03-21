@@ -25,6 +25,8 @@ void linked_list_traverse_lr(list_t* list, void func(void*));
 void linked_list_traverse_rl(list_t* list, void func(void*));
 void* linked_list_find(list_t* list, void* desired_data,
                        int cmp(const void* data, const void* desired));
+void** linked_list_find_all(list_t* list, void* desired_data, int* num_found,
+                            int cmp(const void* data, const void* desired));
 
 
 #endif // LINKED_LIST_H
