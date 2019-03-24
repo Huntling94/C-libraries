@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdarg.h>
+#include <limits.h>
 #include <float.h>
 #include <assert.h>
 #include <math.h>
@@ -10,6 +12,23 @@
 #define CHAR 3
 #define FLOAT 4
 #define LONG 5
+
+int arg_max_int(int count, ...)
+{
+    va_list ap;
+    int max = INT_MIN;
+    int val, i;
+    va_start(ap, count);
+    for(i=0; i<count; i++){
+        val = va_arg(ap, int);
+        if (val > max){
+            max = val;
+        }
+    }
+    va_end(ap);
+    return max;
+    
+}
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------

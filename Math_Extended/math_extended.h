@@ -6,5 +6,6 @@ int factorial(int n);
 int fibonacci(int n);
 double log_loss(int true_label, double predicted_prob);
 double accuracy(int num_correct, int num_matches);
+int arg_max_int(int count, ...);
 
 #endif // MATH_EXTENDED_H
