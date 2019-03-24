@@ -5,6 +5,7 @@
 #include <math.h>
 #include <time.h>   // for time_t
 #include <unistd.h> // for getpid
+#include <errno.h>
 #include "vector.h"
 #include "../Math_Extended/math_extended.h"
 
