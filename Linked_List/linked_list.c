@@ -4,218 +4,247 @@
 #include "linked_list.h"
 #include "..\Utilities\utils.h"
 
+typedef struct node node_t;
+
+
+struct node{
+    void* data;
+    node_t* next;
+    node_t* prev;
+};
+
+
+struct linked_list{
+    int len;
+    node_t* left;
+    node_t* right;
+};
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: create_node
+ *
+ * Arguments: pointer to data to store in node
+ *
+ * Returns: pointer to node
+ * 
+ * Dependency: utils.h
+ */
+node_t* create_node(void* data)
+{
+    node_t* node = malloc(sizeof*node);
+    assert(unwanted_null(node));
+    memset(node, 0, sizeof(*node));
+    node->data = data;
+    return node;
+}
+
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
  * Function: create_linked_list
  *
- * Arguments: data to store
+ * Arguments: void
  *
- * Returns: pointer to doubly linked list (with a pointer to the end)
+ * Returns: pointer to doubly linked list
  * 
  * Dependency: utils.h
- * 
- * NOTE as a matter of implementation, the end pointer is only accurate for the
- * first list (this is to ensure popping off the list is O(1)).
  */
-list_t* create_linked_list(void* data)
+list_t* create_linked_list(void)
 {
-    list_t* ret = malloc(sizeof *ret);
+    list_t* ret = malloc(sizeof*ret);
     assert(unwanted_null(ret));
-
-    ret->next = NULL;
-    ret->prev = NULL;
-    ret->end = ret;
-    ret->data = data;
+    memset(ret, 0, sizeof(*ret));
     return ret;
 }
 //-----------------------------------------------------------------------------
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
- * Function: linked_list_is_empty
+ * Function: list_is_empty
  *
  * Arguments: pointer to list
  *
  * Returns: 1 if list is empty, 0 otherwise
- *           A list is deemed to be empty if the end of the list is set to NULL
- *           This only happens if you pop off a list with 1 element.
  * 
  * Dependency: utils.h
  */
-int linked_list_is_empty(list_t* list)
+int list_is_empty(list_t* list)
 {
     if (list == NULL){
         error_set_to_null_message("linked_list");
     }
-    return list->end == NULL;
+    return list->len == 0;
 }
 //-----------------------------------------------------------------------------
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
- * Function: linked_list_push
- *
- * Arguments: pointer to list
- *            data to store at end of list
- *
- * Returns: void (end of list has a new node containing the data)
- * 
- * Dependency: utils.h
- *             create_linked_list
- * 
- * Complexity: (O(1))
- */
-void linked_list_push(list_t* list, void* data)
-{
-    if (list == NULL){
-        error_set_to_null_message("linked_list");
-    }
-
-    if (linked_list_is_empty(list)){
-        list->data = data;
-        list->next = NULL;
-        list->prev = NULL;
-        list->end = list;
-        return;
-    }
-
-    list_t* new_node = create_linked_list(data);
-    assert(unwanted_null(new_node));
-    new_node->end = new_node;
-    new_node->prev = list->end;
-    list->end->next = new_node;
-    list->end = new_node;
-}
-//-----------------------------------------------------------------------------
-
-/*****************************************************************************/
-/**----------------------------------------------------------------------------
- * Function: linked_list_pop
+ * Function: list_len
  *
  * Arguments: pointer to list
  *
- * Returns: data stored at the end of the list
+ * Returns: number of nodes in list
  * 
- * Dependency: utils.h
- * 
- * Complexity: (O(1) — achieved by not updating end in all but start of list)
  */
-void* linked_list_pop(list_t* list)
+int list_len(list_t* list)
 {
     if (list == NULL){
-        error_set_to_null_message("linked_list");
+        error_set_to_null_message("list");
     }
-    if (list->end == NULL){
-        error_message("Cannot pop off an empty linked_list");
-    }
-    list_t* end = list->end;
-
-    /* Start of list is end of list */
-    if (end == list){
-        void* ret = list->data;
-        list->end = NULL;
-        list->next = NULL;
-        list->prev = NULL;
-        return ret;
-    }
-
-    list->end = list->end->prev;
-    list->end->next = NULL;
-    void* ret = end->data;
-    free(end);
-    return ret;
+    return list->len;
 }
 //-----------------------------------------------------------------------------
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
- * Function: linked_list_prepend
+ * Function: list_pushl
  *
- * Arguments: pointer to start of list
- *            data to be stored at new start of list
+ * Arguments: pointer to list
+ *            data to store at node
  *
- * Returns: the new start of the list with data added
- *          (Will be fixed later to return void)
+ * Returns: void (right of list has a new node containing the data)
  * 
  * Dependency: utils.h
- *             create_linked_list
+ *             create_node
  * 
  * Complexity: (O(1))
  */
-list_t* linked_list_prepend(list_t* list, void* data)
+void list_pushl(list_t* list, void* data)
 {
     if (list == NULL){
-        error_set_to_null_message("linked_list");
+        error_set_to_null_message("list");
     }
-    if (list->prev != NULL){
-        error_message("Please pass in the first element of the linked list "
-                      "in order to use the prepend function.");
+    node_t* node = create_node(data);
+    
+    if(list_is_empty(list)){
+        list->left = list->right = node;
+        node->next = node->prev = NULL;
     }
-
-    list_t* new_node = create_linked_list(data);
-    assert(unwanted_null(new_node));
-
-    list->prev = new_node;
-    new_node->next = list;
-    new_node->prev = NULL;
-    new_node->end = list->end;
-    return new_node;
-}
-//-----------------------------------------------------------------------------
-
-/*****************************************************************************/
-/**----------------------------------------------------------------------------
- * Function: linked_list_dequeue
- *
- * Arguments: pointer to start of list
- *
- * Returns: data stored at the start of list (the list node passed in)
- * 
- * Dependency: utils.h
- *             linked_list_pop
- * 
- * Complexity: (O(1))
- */
-void* linked_list_dequeue(list_t* list)
-{
-    if (list == NULL){
-        error_set_to_null_message("linked_list");
-    }
-
-    /* Size of list is 1 */
-    if(list == list->end){
-        return linked_list_pop(list);
-    }
-    /* Size of list is 2 */
-    else if(list->next == list->end){
-        void* to_ret = list->data;
-        list_t* to_del = list->next;
-        
-        list->next = NULL;
-        list->end = list;
-        list->data = to_del->data;
-        free(to_del);
-        return to_ret;
-    }
-    /* Size of list greater than 2 */
     else{
-        void* to_ret = list->data;
-        list_t* to_del = list->next;
-        assert(list->next->next != NULL); // Just in case
-        list->next = list->next->next;
-        list->next->prev = list;
-        list->data = to_del->data;
-        free(to_del);
-        return to_ret;
+        list->right->next = node;
+        node->prev = list->right;
+        list->right = node;
     }
+    list->len++;
 }
 //-----------------------------------------------------------------------------
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
- * Function: linked_list_traverse_lr
+ * Function: list_pushr
  *
- * Arguments: pointer to start of list
+ * Arguments: pointer to list
+ *            data to store at node
+ *
+ * Returns: void (left of list has a new node containing the data)
+ * 
+ * Dependency: utils.h
+ *             create_node
+ * 
+ * Complexity: (O(1))
+ */
+void list_pushr(list_t* list, void* data)
+{
+    if (list == NULL){
+        error_set_to_null_message("list");
+    }
+    node_t* node = create_node(data);
+    if(list_is_empty(list)){
+        list->left = list->right = node;
+        node->next = node->prev = NULL;
+    }
+    else{
+        list->left->prev = node;
+        node->next = list->left;
+        list->left = node;
+    }
+    list->len++;
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: list_popr
+ *
+ * Arguments: pointer to list
+ *
+ * Returns: data stored right of list
+ * 
+ * Dependency: utils.h
+ * 
+ * Complexity: (O(1)
+ */
+void* list_popr(list_t* list)
+{
+    if (list == NULL){
+        error_set_to_null_message("list");
+    }
+    if (list_is_empty(list)){
+        error_message("Cannot pop off an empty list");
+    }
+
+    void* data = list->right->data;
+    if(list->len == 1){
+        free(list->right);
+        list->left = list->right = NULL;
+    }
+    else if (list->len == 2){
+        free(list->right);
+        list->right = list->left;
+    }
+    else{
+        list->right = list->right->prev;
+        list->right->next = NULL;
+    }
+    list->len--;
+    return data;
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: list_popl
+ *
+ * Arguments: pointer to list
+ *
+ * Returns: data stored left of list
+ * 
+ * Dependency: utils.h
+ * 
+ * Complexity: (O(1)
+ */
+void* list_popl(list_t* list)
+{
+    if (list == NULL){
+        error_set_to_null_message("list");
+    }
+    if (list_is_empty(list)){
+        error_message("Cannot pop off an empty list");
+    }
+    void* data = list->left->data;
+    if(list->len == 1){
+        free(list->left);
+        list->left = list->right = NULL;
+    }
+    else if (list->len == 2){
+        free(list->left);
+        list->left = list->right;
+    }
+    else{
+        list->left = list->left->next;
+        list->left->prev = NULL;
+    }
+    list->len--;
+    return data;
+}
+//-----------------------------------------------------------------------------
+
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: list_traverse_lr
+ *
+ * Arguments: pointer to list
  *            function that operates on each data in list
  *
  * Returns: Void
@@ -226,22 +255,104 @@ void* linked_list_dequeue(list_t* list)
  * 
  * Complexity: (O(n))
  */
-void linked_list_traverse_lr(list_t* list, void func(void*))
+void list_traverse_lr(list_t* list, void func (void*))
 {
     if (list == NULL){
-        error_set_to_null_message("linked_list");
+        error_set_to_null_message("list");
     }
-    if (linked_list_is_empty(list)){
-        return;
-    }
-    list_t* start = list;
+    node_t* start = list->left;
     while(start){
         func(start->data);
-        start->end = list->end;
         start = start->next;
     }
 }
 //-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: linked_list_find
+ *
+ * Arguments: pointer list
+ *            key of desired data you want
+ *            comparison function that compares data with desired_data
+ *
+ * Returns: Pointer to *first instance of data* (left to right) if found, or NULL
+ *           Please note that your comparison function may not be commutative.
+ *           If the data you insert into the list is a struct, and you want to
+ *           find the first instance of data with a particular key (an element)
+ *           in that struct, then the cmp function is not commutative.
+ *           Hence, ensure, the left argument takes the lists data, and the right
+ *           the key you are searching for
+ * 
+ * Dependency: utils.h
+ * 
+ * Complexity: (O(n))
+ */
+void* list_find(list_t* list, void* desired_data, int cmp(const void* data, const void* desired))
+{
+    if (list == NULL){
+        error_set_to_null_message("list");
+    }
+    node_t* copy = list->left;
+    while(copy){
+        if (!cmp(copy->data, desired_data)){
+            return copy->data;
+        }
+        copy = copy->next;
+    }
+    return NULL;
+}
+//-----------------------------------------------------------------------------
+
+/*****************************************************************************/
+/**----------------------------------------------------------------------------
+ * Function: list_find_all
+ *
+ * Arguments: pointer to list
+ *            key of desired data you want
+ *            pointer to integer which will store number of times key is found
+ *            comparison function that compares data with desired_data
+ *
+ * Returns: Pointer to *first instance of data* (left to right) if found, or NULL
+ *           Please note that your comparison function may not be commutative.
+ *           See find function for more details.
+ * 
+ * Dependency: utils.h
+ * 
+ * Complexity: (O(n))
+ */
+void** list_find_all(list_t* list, void* desired_data, int* num_found,
+                     int cmp(const void* data, const void* desired))
+{
+    if (list == NULL){
+        error_set_to_null_message("list");
+    }
+    int alloc = 1;
+    *num_found = 0;
+
+    void** found = malloc(alloc * sizeof(*found));
+    assert(unwanted_null(found));
+    node_t* copy = list->left;
+
+    while(copy){
+        if (!cmp(copy->data, desired_data)){
+            if (alloc == *num_found){
+                alloc *= 2;
+                found = realloc(found, alloc * sizeof(*found));
+            }
+            found[*num_found] = copy->data;
+            (*num_found)++;
+        }
+        copy = copy->next;
+    }
+    if(*num_found == 0){
+        free(found);
+        return NULL;
+    }
+    return found;
+}
+
+#if 0
 
 /*****************************************************************************/
 /**----------------------------------------------------------------------------
@@ -275,83 +386,4 @@ void linked_list_traverse_rl(list_t* list, void func(void*))
 }
 //-----------------------------------------------------------------------------
 
-/*****************************************************************************/
-/**----------------------------------------------------------------------------
- * Function: linked_list_find
- *
- * Arguments: pointer to start of list
- *            key of desired data you want
- *            comparison function that compares data with desired_data
- *
- * Returns: Pointer to *first instance of data* (left to right) if found, or NULL
- *           Please note that your comparison function may not be commutative.
- *           If the data you insert into the list is a struct, and you want to
- *           find the first instance of data with a particular key (an element)
- *           in that struct, then the cmp function is not commutative.
- *           Hence, ensure, the left argument takes the lists data, and the right
- *           the key you are searching for
- * 
- * Dependency: utils.h
- * 
- * Complexity: (O(n))
- */
-void* linked_list_find(list_t* list, void* desired_data,
-                       int cmp(const void* data, const void* desired))
-{
-    list_t* copy = list;
-    while(copy){
-        if (!cmp(copy->data, desired_data)){
-            return copy->data;
-        }
-        copy = copy->next;
-    }
-    return NULL;
-}
-//-----------------------------------------------------------------------------
-
-/*****************************************************************************/
-/**----------------------------------------------------------------------------
- * Function: linked_list_find_all
- *
- * Arguments: pointer to start of list
- *            key of desired data you want
- *            pointer to integer which will store number of times key is found
- *            comparison function that compares data with desired_data
- *
- * Returns: Pointer to *first instance of data* (left to right) if found, or NULL
- *           Please note that your comparison function may not be commutative.
- *           See find function for more details.
- * 
- * Dependency: utils.h
- * 
- * Complexity: (O(n))
- */
-void** linked_list_find_all(list_t* list, void* desired_data, int* num_found,
-                            int cmp(const void* data, const void* desired))
-{
-    int alloc = 1;
-    *num_found = 0;
-
-    void** found = malloc(alloc * sizeof(*found));
-    assert(unwanted_null(found));
-    list_t* copy = list;
-
-    while(copy){
-        if (!cmp(copy->data, desired_data)){
-            if (alloc == *num_found){
-                alloc *= 2;
-                found = realloc(found, alloc * sizeof(*found));
-            }
-            found[*num_found] = copy->data;
-            (*num_found)++;
-        }
-        copy = copy->next;
-    }
-    if(*num_found == 0){
-        free(found);
-        return NULL;
-    }
-    return found;
-}
-//-----------------------------------------------------------------------------
-
+#endif
